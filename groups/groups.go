@@ -26,7 +26,6 @@ func New(ctx *access.KeycloakContext) *GroupService {
 }
 
 var groupsService *GroupService
-var handler *modules.ConfigurationHandler
 
 // groupsService := New(keycloak)
 func (s *GroupService) Apply(keycloakConfig *modules.ConfigurationContext) error {

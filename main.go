@@ -10,7 +10,7 @@ import (
 	"keycloak-tools/permissions"
 	"keycloak-tools/policies"
 	"keycloak-tools/resources"
-	"keycloak-tools/scopes"
+	_ "keycloak-tools/scopes"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -20,7 +20,8 @@ import (
 // var groupsService *groups.GroupService
 
 var keycloak *access.KeycloakContext
-var scopeService *scopes.ScopeService
+
+// var scopeService *scopes.ScopeService
 var clientService *clients.ClientService
 var resourceService *resources.ResourceService
 var policyService *policies.PolicyService
@@ -29,7 +30,7 @@ var permissionService *permissions.PermissionService
 func init() {
 	keycloak = access.KeycloakConnection()
 	// groupsService = groups.New(keycloak)
-	scopeService = scopes.New(keycloak)
+	// scopeService = scopes.New(keycloak)
 	clientService = clients.New(keycloak)
 	resourceService = resources.New(keycloak)
 	policyService = policies.New(keycloak)
@@ -70,12 +71,12 @@ func main() {
 	if err != nil {
 		log.Printf("Error locating client config, %s", err.Error())
 	} else {
-		for _, scope := range keycloakConfig.ClientConfig.Scopes {
-			err = scopeService.AddScope(*client.ID, &scope.ScopeSpec)
-			if err != nil {
-				log.Printf("Problem with scope %s creation. %s", *scope.ScopeSpec.ID, err.Error())
-			}
-		}
+		// for _, scope := range keycloakConfig.ClientConfig.Scopes {
+		// 	err = scopeService.AddScope(*client.ID, &scope.ScopeSpec)
+		// 	if err != nil {
+		// 		log.Printf("Problem with scope %s creation. %s", *scope.ScopeSpec.ID, err.Error())
+		// 	}
+		// }
 		for _, resource := range keycloakConfig.ClientConfig.Resources {
 			err = resourceService.AddResource(*client.ID, resource.ResourceSpec)
 			if err != nil {
