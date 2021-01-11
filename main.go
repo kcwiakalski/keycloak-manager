@@ -5,54 +5,19 @@ import (
 	"io/ioutil"
 	"keycloak-tools/access"
 	"keycloak-tools/clients"
-	"keycloak-tools/groups"
+	_ "keycloak-tools/groups"
+	"keycloak-tools/modules"
 	"keycloak-tools/permissions"
 	"keycloak-tools/policies"
 	"keycloak-tools/resources"
 	"keycloak-tools/scopes"
-	"log"
 	"os"
 
-	"github.com/Nerzal/gocloak/v7"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
-type KeycloakConfig struct {
-	Groups       []GroupsConfig   `json:"groups"`
-	ClientConfig ClientConfigSpec `json:"clientConfig"`
-}
-
-type GroupsConfig struct {
-	Op        string        `json:"op"`
-	GroupSpec gocloak.Group `json:"groupSpec"`
-}
-
-type ClientConfigSpec struct {
-	Name        string             `json:"name"`
-	Scopes      []ScopeConfig      `json:"scopes"`
-	Resources   []ResourceConfig   `json:"resources"`
-	Policies    []PolicyConfig     `json:"policies"`
-	Permissions []PermissionConfig `json:"permissions"`
-}
-
-type ScopeConfig struct {
-	Op        string                      `json:"op"`
-	ScopeSpec gocloak.ScopeRepresentation `json:"scopeSpec"`
-}
-
-type ResourceConfig struct {
-	Op           string                         `json:"op"`
-	ResourceSpec gocloak.ResourceRepresentation `json:"resourceSpec"`
-}
-type PolicyConfig struct {
-	Op         string                       `json:"op"`
-	PolicySpec gocloak.PolicyRepresentation `json:"policySpec"`
-}
-type PermissionConfig struct {
-	Op       string                           `json:"op"`
-	PermSpec gocloak.PermissionRepresentation `json:"permSpec"`
-}
-
-var groupsService *groups.GroupService
+// var groupsService *groups.GroupService
 
 var keycloak *access.KeycloakContext
 var scopeService *scopes.ScopeService
@@ -63,7 +28,7 @@ var permissionService *permissions.PermissionService
 
 func init() {
 	keycloak = access.KeycloakConnection()
-	groupsService = groups.New(keycloak)
+	// groupsService = groups.New(keycloak)
 	scopeService = scopes.New(keycloak)
 	clientService = clients.New(keycloak)
 	resourceService = resources.New(keycloak)
@@ -72,22 +37,36 @@ func init() {
 }
 
 func main() {
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 	jsonFile, err := os.Open("product-service-sec.json")
 	if err != nil {
 		panic("Something wrong with config file. " + err.Error())
 	}
 	defer jsonFile.Close()
 	fileContent, _ := ioutil.ReadAll(jsonFile)
-	var keycloakConfig KeycloakConfig
+	var keycloakConfig modules.KeycloakConfig
 	json.Unmarshal(fileContent, &keycloakConfig)
 
-	for _, group := range keycloakConfig.Groups {
-		err := groupsService.AddGroup(&group.GroupSpec)
-		if err != nil {
-			log.Println(err)
-		}
-	}
+	// for _, group := range keycloakConfig.Groups {
+	// 	err := groupsService.AddGroup(&group.GroupSpec)
+	// 	if err != nil {
+	// 		log.Println(err)
+	// 	}
+	// }
 	client, err := clientService.FindClientByName(keycloakConfig.ClientConfig.Name)
+	context := modules.ConfigurationContext{
+		Config: &keycloakConfig,
+		Client: client,
+	}
+
+	handlers := make([]modules.ConfigurationHandler, len(modules.Modules))
+	for _, handler := range modules.Modules {
+		handlers[handler.Order()] = handler
+	}
+	for _, handler := range handlers {
+		handler.Apply(&context)
+	}
+
 	if err != nil {
 		log.Printf("Error locating client config, %s", err.Error())
 	} else {

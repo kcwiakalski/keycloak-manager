@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"keycloak-tools/access"
-	"log"
+	"keycloak-tools/modules"
 	"strings"
 
 	"github.com/Nerzal/gocloak/v7"
+	"github.com/rs/zerolog/log"
 )
 
 type GroupService struct {
@@ -24,6 +25,29 @@ func New(ctx *access.KeycloakContext) *GroupService {
 	}
 }
 
+var groupsService *GroupService
+var handler *modules.ConfigurationHandler
+
+// groupsService := New(keycloak)
+func (s *GroupService) Apply(keycloakConfig *modules.ConfigurationContext) error {
+	var finalError error
+	for _, group := range keycloakConfig.Config.Groups {
+		err := groupsService.AddGroup(&group.GroupSpec)
+		if err != nil {
+			finalError = err
+		}
+	}
+	return finalError
+}
+
+func (s *GroupService) Order() int {
+	return 0
+}
+
+func init() {
+	groupsService = New(modules.Keycloak)
+	modules.Modules["groups"] = groupsService
+}
 func (s *GroupService) getGroupByName(groupName string) *gocloak.Group {
 	first := 0
 	max := 20
@@ -90,29 +114,32 @@ func (s *GroupService) AddGroup(group *gocloak.Group) error {
 		if !s.groupExists(*group.Name) {
 			groupId, err := s.client.CreateGroup(s.ctx, s.token, "products", *group)
 			if err != nil {
-				log.Printf("Error creating group %s. %s", *group.Name, err.Error())
+				log.Err(err).Str("name", *group.Name).Msg("Error creating group")
 				return err
 			} else {
-				log.Printf("Group %s created with id %s", *group.Name, groupId)
+				log.Info().Str("name", *group.Name).Str("id", groupId).Msg("Group created")
 			}
 		} else {
-			log.Printf("Group with name %s already exists", *group.Name)
+			log.Warn().Str("name", *group.Name).Msg("Group already exists")
 		}
 	} else if pathParts > 1 {
 		mainGroup := s.getGroupByName(strings.Split(*group.Path, "/")[1])
 		directParent := s.findDirectParentGroup(group, mainGroup)
 		for _, childGroups := range *directParent.SubGroups {
 			if childGroups.Name == group.Name {
+				log.Warn().Str("group", *group.Name).Str("parent", *directParent.Name).Msg("Group with parent is already defined")
 				return fmt.Errorf("Group %s with parent%s is already defined", *group.Name, *directParent.Name)
 			}
 		}
 		groupId, err := s.client.CreateChildGroup(s.ctx, s.token, "products", *directParent.ID, *group)
 		if err != nil {
-			return fmt.Errorf("Cannor create child group %s in parent %s. %s", *group.Name, *directParent.Name, err.Error())
+			log.Err(err).Str("group", *group.Name).Str("parent", *directParent.Name).Msg("Cannot create child group in parent")
+			return fmt.Errorf("Cannot create child group %s in parent %s. %s", *group.Name, *directParent.Name, err.Error())
 		} else {
-			log.Printf("Child group %s created in parent %s with id %s", *group.Name, *directParent.Name, groupId)
+			log.Info().Str("name", *group.Name).Str("parent", *directParent.Name).Str("id", groupId).Msg("Child group created")
 		}
 	} else {
+		log.Error().Str("group", *group.Name).Msg("Invalid group definition")
 		return fmt.Errorf("Invalid group definition for name %s", *group.Name)
 	}
 	return nil
