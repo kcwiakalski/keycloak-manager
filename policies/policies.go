@@ -8,16 +8,16 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type PolicyService struct {
+type policyService struct {
 	client gocloak.GoCloak
 	ctx    context.Context
 	token  string
 }
 
-var service *PolicyService
+var service *policyService
 
 // TODO remove groupsService := New(keycloak)
-func (s *PolicyService) Apply(keycloakConfig *modules.ConfigurationContext) error {
+func (s *policyService) Apply(keycloakConfig *modules.ConfigurationContext) error {
 	var finalError error
 	clientId := *keycloakConfig.Client.ID
 	for _, policy := range keycloakConfig.Config.ClientConfig.Policies {
@@ -29,13 +29,13 @@ func (s *PolicyService) Apply(keycloakConfig *modules.ConfigurationContext) erro
 	return finalError
 }
 
-func (s *PolicyService) Order() int {
+func (s *policyService) Order() int {
 	return 3
 }
 
 func init() {
 	ctx := modules.Keycloak
-	service = &PolicyService{
+	service = &policyService{
 		client: ctx.Client,
 		ctx:    ctx.Ctx,
 		token:  ctx.Token.AccessToken,
@@ -43,7 +43,7 @@ func init() {
 	modules.Modules["policies"] = service
 }
 
-func (s *PolicyService) CreatePolicy(clientId string, policy *gocloak.PolicyRepresentation) error {
+func (s *policyService) CreatePolicy(clientId string, policy *gocloak.PolicyRepresentation) error {
 	_, err := s.client.CreatePolicy(s.ctx, s.token, "products", clientId, *policy)
 	if err != nil {
 		log.Err(err).Str("name", *policy.Name).Msg("Cannot create policy")

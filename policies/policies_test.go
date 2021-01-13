@@ -9,7 +9,7 @@ import (
 )
 
 func TestPolicyCreation(t *testing.T) {
-	service := PolicyService{}
+	service := policyService{}
 	log.Println(service)
 }
 func TestSome(t *testing.T) {

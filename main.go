@@ -7,7 +7,7 @@ import (
 	"keycloak-tools/clients"
 	_ "keycloak-tools/groups"
 	"keycloak-tools/modules"
-	"keycloak-tools/permissions"
+	_ "keycloak-tools/permissions"
 	_ "keycloak-tools/policies"
 	_ "keycloak-tools/resources"
 	_ "keycloak-tools/scopes"
@@ -26,7 +26,7 @@ var clientService *clients.ClientService
 
 // var resourceService *resources.ResourceService
 // var policyService *policies.PolicyService
-var permissionService *permissions.PermissionService
+// var permissionService *permissions.PermissionService
 
 func init() {
 	keycloak = access.KeycloakConnection()
@@ -35,7 +35,7 @@ func init() {
 	clientService = clients.New(keycloak)
 	// resourceService = resources.New(keycloak)
 	// policyService = policies.New(keycloak)
-	permissionService = permissions.New(keycloak)
+	// permissionService = permissions.New(keycloak)
 }
 
 func main() {
@@ -90,11 +90,11 @@ func main() {
 		// 		log.Printf("Problem with policy %s creation. %s", *policy.PolicySpec.Name, err.Error())
 		// 	}
 		// }
-		for _, perm := range keycloakConfig.ClientConfig.Permissions {
-			err = permissionService.AddPermission(*client.ID, perm.PermSpec)
-			if err != nil {
-				log.Printf("Problem with permission %s creation. %s", *perm.PermSpec.Name, err.Error())
-			}
-		}
+		// for _, perm := range keycloakConfig.ClientConfig.Permissions {
+		// 	err = permissionService.AddPermission(*client.ID, perm.PermSpec)
+		// 	if err != nil {
+		// 		log.Printf("Problem with permission %s creation. %s", *perm.PermSpec.Name, err.Error())
+		// 	}
+		// }
 	}
 }
