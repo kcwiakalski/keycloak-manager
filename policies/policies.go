@@ -16,7 +16,6 @@ type policyService struct {
 
 var service *policyService
 
-// TODO remove groupsService := New(keycloak)
 func (s *policyService) Apply(keycloakConfig *modules.ConfigurationContext) error {
 	var finalError error
 	clientId := *keycloakConfig.Client.ID

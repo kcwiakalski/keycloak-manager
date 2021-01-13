@@ -12,37 +12,37 @@ type ConfigurationContext struct {
 }
 
 type KeycloakConfig struct {
-	Groups       []GroupsConfig   `json:"groups"`
-	ClientConfig ClientConfigSpec `json:"clientConfig"`
+	Groups       []GroupsOp         `json:"groups"`
+	ClientConfig ClientConfigOpSpec `json:"clientConfig"`
 }
 
-type GroupsConfig struct {
+type GroupsOp struct {
 	Op        string        `json:"op"`
 	GroupSpec gocloak.Group `json:"groupSpec"`
 }
 
-type ClientConfigSpec struct {
-	Name        string             `json:"name"`
-	Scopes      []ScopeConfig      `json:"scopes"`
-	Resources   []ResourceConfig   `json:"resources"`
-	Policies    []PolicyConfig     `json:"policies"`
-	Permissions []PermissionConfig `json:"permissions"`
+type ClientConfigOpSpec struct {
+	Name        string          `json:"name"`
+	Scopes      []ScopesOp      `json:"scopes"`
+	Resources   []ResourcesOp   `json:"resources"`
+	Policies    []PoliciesOp    `json:"policies"`
+	Permissions []PermissionsOp `json:"permissions"`
 }
 
-type ScopeConfig struct {
+type ScopesOp struct {
 	Op        string                      `json:"op"`
 	ScopeSpec gocloak.ScopeRepresentation `json:"scopeSpec"`
 }
 
-type ResourceConfig struct {
+type ResourcesOp struct {
 	Op           string                         `json:"op"`
 	ResourceSpec gocloak.ResourceRepresentation `json:"resourceSpec"`
 }
-type PolicyConfig struct {
+type PoliciesOp struct {
 	Op         string                       `json:"op"`
 	PolicySpec gocloak.PolicyRepresentation `json:"policySpec"`
 }
-type PermissionConfig struct {
+type PermissionsOp struct {
 	Op       string                           `json:"op"`
 	PermSpec gocloak.PermissionRepresentation `json:"permSpec"`
 }

@@ -2,7 +2,6 @@ package scopes
 
 import (
 	"context"
-	"keycloak-tools/access"
 	"keycloak-tools/modules"
 
 	"github.com/Nerzal/gocloak/v7"
@@ -17,7 +16,6 @@ type scopeService struct {
 
 var service *scopeService
 
-// TODO remove groupsService := New(keycloak)
 func (s *scopeService) Apply(keycloakConfig *modules.ConfigurationContext) error {
 	var finalError error
 	clientId := *keycloakConfig.Client.ID
@@ -35,16 +33,13 @@ func (s *scopeService) Order() int {
 }
 
 func init() {
-	service = new(modules.Keycloak)
-	modules.Modules["scopes"] = service
-}
-
-func new(ctx *access.KeycloakContext) *scopeService {
-	return &scopeService{
+	ctx := modules.Keycloak
+	service = &scopeService{
 		client: ctx.Client,
 		ctx:    ctx.Ctx,
 		token:  ctx.Token.AccessToken,
 	}
+	modules.Modules["scopes"] = service
 }
 
 func (s *scopeService) addScope(clientId string, scope *gocloak.ScopeRepresentation) error {
