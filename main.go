@@ -9,7 +9,7 @@ import (
 	"keycloak-tools/modules"
 	"keycloak-tools/permissions"
 	"keycloak-tools/policies"
-	"keycloak-tools/resources"
+	_ "keycloak-tools/resources"
 	_ "keycloak-tools/scopes"
 	"os"
 
@@ -23,7 +23,8 @@ var keycloak *access.KeycloakContext
 
 // var scopeService *scopes.ScopeService
 var clientService *clients.ClientService
-var resourceService *resources.ResourceService
+
+// var resourceService *resources.ResourceService
 var policyService *policies.PolicyService
 var permissionService *permissions.PermissionService
 
@@ -32,7 +33,7 @@ func init() {
 	// groupsService = groups.New(keycloak)
 	// scopeService = scopes.New(keycloak)
 	clientService = clients.New(keycloak)
-	resourceService = resources.New(keycloak)
+	// resourceService = resources.New(keycloak)
 	policyService = policies.New(keycloak)
 	permissionService = permissions.New(keycloak)
 }
@@ -77,12 +78,12 @@ func main() {
 		// 		log.Printf("Problem with scope %s creation. %s", *scope.ScopeSpec.ID, err.Error())
 		// 	}
 		// }
-		for _, resource := range keycloakConfig.ClientConfig.Resources {
-			err = resourceService.AddResource(*client.ID, resource.ResourceSpec)
-			if err != nil {
-				log.Printf("Problem with resource %s creation. %s", *resource.ResourceSpec.Name, err.Error())
-			}
-		}
+		// for _, resource := range keycloakConfig.ClientConfig.Resources {
+		// 	err = resourceService.AddResource(*client.ID, resource.ResourceSpec)
+		// 	if err != nil {
+		// 		log.Printf("Problem with resource %s creation. %s", *resource.ResourceSpec.Name, err.Error())
+		// 	}
+		// }
 		for _, policy := range keycloakConfig.ClientConfig.Policies {
 			err = policyService.CreatePolicy(*client.ID, &policy.PolicySpec)
 			if err != nil {

@@ -17,7 +17,7 @@ type scopeService struct {
 
 var service *scopeService
 
-// groupsService := New(keycloak)
+// TODO remove groupsService := New(keycloak)
 func (s *scopeService) Apply(keycloakConfig *modules.ConfigurationContext) error {
 	var finalError error
 	clientId := *keycloakConfig.Client.ID
