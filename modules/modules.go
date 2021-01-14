@@ -6,14 +6,31 @@ import (
 	"github.com/Nerzal/gocloak/v7"
 )
 
-type ConfigurationContext struct {
-	Config *KeycloakConfig
+type DiffGenCtx struct {
 	Client *gocloak.Client
+	Config *KeycloakConfig
 }
 
 type KeycloakConfig struct {
-	Groups       []GroupsOp         `json:"groups"`
-	ClientConfig ClientConfigOpSpec `json:"clientConfig"`
+	Groups       []gocloak.Group `json:"groups"`
+	ClientConfig ClientConfig    `json:"clientConfig"`
+}
+type ClientConfig struct {
+	Name        string                             `json:"name"`
+	Scopes      []gocloak.ScopeRepresentation      `json:"scopes,omitempty"`
+	Resources   []gocloak.ResourceRepresentation   `json:"resources,omitempty"`
+	Policies    []gocloak.PolicyRepresentation     `json:"policies,omitempty"`
+	Permissions []gocloak.PermissionRepresentation `json:"permissions,omitempty"`
+}
+
+type ConfigurationContext struct {
+	Config *KeycloakOpsConfig
+	Client *gocloak.Client
+}
+
+type KeycloakOpsConfig struct {
+	Groups       []GroupsOp         `json:"groups,omitempty"`
+	ClientConfig ClientConfigOpSpec `json:"clientConfig,omitempty"`
 }
 
 type GroupsOp struct {
@@ -23,10 +40,10 @@ type GroupsOp struct {
 
 type ClientConfigOpSpec struct {
 	Name        string          `json:"name"`
-	Scopes      []ScopesOp      `json:"scopes"`
-	Resources   []ResourcesOp   `json:"resources"`
-	Policies    []PoliciesOp    `json:"policies"`
-	Permissions []PermissionsOp `json:"permissions"`
+	Scopes      []ScopesOp      `json:"scopes,omitempty"`
+	Resources   []ResourcesOp   `json:"resources,omitempty"`
+	Policies    []PoliciesOp    `json:"policies,omitempty"`
+	Permissions []PermissionsOp `json:"permissions,omitempty"`
 }
 
 type ScopesOp struct {
@@ -50,6 +67,7 @@ type PermissionsOp struct {
 var Keycloak *access.KeycloakContext
 
 var Modules map[string]ConfigurationHandler = make(map[string]ConfigurationHandler)
+var DiffModules map[string]DiffHandler = make(map[string]DiffHandler)
 
 func init() {
 	Keycloak = access.KeycloakConnection()
@@ -57,5 +75,11 @@ func init() {
 
 type ConfigurationHandler interface {
 	Apply(keycloakConfig *ConfigurationContext) error
+	Order() int
+}
+
+type DiffHandler interface {
+	// method generating operations required to perform, so server match with config declaration
+	Diff(keycloakConfig *DiffGenCtx, opsConfig *KeycloakOpsConfig) error
 	Order() int
 }

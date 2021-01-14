@@ -16,13 +16,19 @@ type scopeService struct {
 
 var service *scopeService
 
+// implementation of modules.ConfigurationHandler.Apply method
 func (s *scopeService) Apply(keycloakConfig *modules.ConfigurationContext) error {
 	var finalError error
 	clientId := *keycloakConfig.Client.ID
 	for _, scope := range keycloakConfig.Config.ClientConfig.Scopes {
-		err := service.addScope(clientId, &scope.ScopeSpec)
-		if err != nil {
-			finalError = err
+		if scope.Op == "ADD" {
+			err := service.addScope(clientId, &scope.ScopeSpec)
+			if err != nil {
+				finalError = err
+			}
+		}
+		if scope.Op == "DEL" {
+			service.deleteScope(clientId, &scope.ScopeSpec)
 		}
 	}
 	return finalError
@@ -30,6 +36,42 @@ func (s *scopeService) Apply(keycloakConfig *modules.ConfigurationContext) error
 
 func (s *scopeService) Order() int {
 	return 1
+}
+
+// implementation of modules.DiffHandler.Diff method
+func (s *scopeService) Diff(keycloakConfig *modules.DiffGenCtx, opsConfig *modules.KeycloakOpsConfig) error {
+	var ops []modules.ScopesOp = make([]modules.ScopesOp, 0)
+	scopes, err := s.getScopes(*keycloakConfig.Client.ID)
+	if err != nil {
+		return err
+	}
+	x0 := keycloakConfig.Config.ClientConfig.Scopes
+	var inputScopes map[string]gocloak.ScopeRepresentation = make(map[string]gocloak.ScopeRepresentation)
+	for _, inputScope := range x0 {
+		inputScopes[*inputScope.Name] = inputScope
+	}
+	for _, scope := range scopes {
+		name := *scope.Name
+		_, found := inputScopes[name]
+		if found {
+			delete(inputScopes, name)
+		} else {
+			log.Info().Str("name", name).Msg("Deprecated/Old Scope detected, delete op required")
+			ops = append(ops, modules.ScopesOp{
+				Op:        "DEL",
+				ScopeSpec: *scope,
+			})
+		}
+	}
+	for key := range inputScopes {
+		scope := inputScopes[key]
+		log.Info().Str("name", *scope.Name).Str("key", key).Msg("New scope detected, add op required")
+		ops = append(ops, modules.ScopesOp{
+			Op:        "ADD",
+			ScopeSpec: scope,
+		})
+	}
+	return nil
 }
 
 func init() {
@@ -40,8 +82,10 @@ func init() {
 		token:  ctx.Token.AccessToken,
 	}
 	modules.Modules["scopes"] = service
+	modules.DiffModules["scopes"] = service
 }
 
+// simple wrapper for keycloak service
 func (s *scopeService) addScope(clientId string, scope *gocloak.ScopeRepresentation) error {
 	_, err := s.client.CreateScope(s.ctx, s.token, "products", clientId, *scope)
 	if err != nil {
@@ -51,4 +95,32 @@ func (s *scopeService) addScope(clientId string, scope *gocloak.ScopeRepresentat
 		log.Info().Str("name", *scope.Name).Msg("Scope created")
 	}
 	return nil
+}
+
+//deleteScope - Simple wrapper for keycloak service
+func (s *scopeService) deleteScope(clientId string, scope *gocloak.ScopeRepresentation) error {
+	err := s.client.DeleteScope(s.ctx, s.token, "products", clientId, *scope.ID)
+	if err != nil {
+		log.Err(err).Str("name", *scope.Name).Msg("Cannot remove scope")
+		return err
+	} else {
+		log.Info().Str("name", *scope.Name).Msg("Scope removed")
+	}
+	return nil
+}
+
+// Simple wrapper for keycloak service
+func (s *scopeService) getScopes(clientId string) ([]*gocloak.ScopeRepresentation, error) {
+	deep := false
+	max := 200
+	params := gocloak.GetScopeParams{
+		Deep: &deep,
+		Max:  &max,
+	}
+	scopes, err := s.client.GetScopes(s.ctx, s.token, "products", clientId, params)
+	if err != nil {
+		log.Err(err).Str("client", clientId).Msg("Fetching client scopes failed")
+	}
+	return scopes, err
+
 }
