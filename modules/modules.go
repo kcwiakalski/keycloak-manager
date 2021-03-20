@@ -6,17 +6,22 @@ import (
 	"github.com/Nerzal/gocloak/v7"
 )
 
-type DiffGenCtx struct {
-	Client *gocloak.Client
-	Config *KeycloakConfig
+//TODO replace with proper config from file or env vars
+const REALM_NAME = "products"
+
+type KeycloakClientDiffGenCtx struct {
+	ClientOp *ClientOp
+	// Config *KeycloakConfig
+	Config *KeycloakClientConfig
 }
 
-type KeycloakConfig struct {
-	Groups       []gocloak.Group `json:"groups"`
-	ClientConfig ClientConfig    `json:"clientConfig"`
-}
-type ClientConfig struct {
-	Name        string                             `json:"name"`
+// type KeycloakConfig struct {
+// 	Groups       []gocloak.Group `json:"groups"`
+// 	ClientConfig ClientConfig    `json:"clientConfig"`
+// }
+
+type KeycloakClientConfig struct {
+	Definition  gocloak.Client                     `json:"clientDefinition"`
 	Scopes      []gocloak.ScopeRepresentation      `json:"scopes,omitempty"`
 	Resources   []gocloak.ResourceRepresentation   `json:"resources,omitempty"`
 	Policies    []gocloak.PolicyRepresentation     `json:"policies,omitempty"`
@@ -29,8 +34,13 @@ type ConfigurationContext struct {
 }
 
 type KeycloakOpsConfig struct {
+	//TODO move this to realm-dedicated part of code
 	Groups       []GroupsOp         `json:"groups,omitempty"`
 	ClientConfig ClientConfigOpSpec `json:"clientConfig,omitempty"`
+	Scopes       []ScopesOp         `json:"scopes,omitempty"`
+	Resources    []ResourcesOp      `json:"resources,omitempty"`
+	Policies     []PoliciesOp       `json:"policies,omitempty"`
+	Permissions  []PermissionsOp    `json:"permissions,omitempty"`
 }
 
 type GroupsOp struct {
@@ -39,13 +49,18 @@ type GroupsOp struct {
 }
 
 type ClientConfigOpSpec struct {
-	Name        string          `json:"name"`
+	Declaration gocloak.Client  `json:"declaration,omitempty"`
+	Op          string          `json:"op,omitempty"`
 	Scopes      []ScopesOp      `json:"scopes,omitempty"`
 	Resources   []ResourcesOp   `json:"resources,omitempty"`
 	Policies    []PoliciesOp    `json:"policies,omitempty"`
 	Permissions []PermissionsOp `json:"permissions,omitempty"`
 }
 
+type ClientOp struct {
+	Op     string         `json:"op"`
+	Client gocloak.Client `json:"client"`
+}
 type ScopesOp struct {
 	Op        string                      `json:"op"`
 	ScopeSpec gocloak.ScopeRepresentation `json:"scopeSpec"`
@@ -80,6 +95,6 @@ type ConfigurationHandler interface {
 
 type DiffHandler interface {
 	// method generating operations required to perform, so server match with config declaration
-	Diff(keycloakConfig *DiffGenCtx, opsConfig *KeycloakOpsConfig) error
+	Diff(keycloakConfig *KeycloakClientDiffGenCtx, opsConfig *KeycloakOpsConfig) error
 	Order() int
 }

@@ -24,6 +24,7 @@ func init() {
 		token:  ctx.Token.AccessToken,
 	}
 	modules.Modules["permissions"] = service
+	modules.DiffModules["permissions"] = service
 }
 
 func (s *permissionService) Apply(keycloakConfig *modules.ConfigurationContext) error {
@@ -50,5 +51,54 @@ func (s *permissionService) AddPermission(clientId string, permission gocloak.Pe
 	} else {
 		log.Info().Str("name", *permission.Name).Msg("Permission created")
 	}
+	return nil
+}
+
+func (s *permissionService) getPermissions(clientName string) ([]*gocloak.PermissionRepresentation, error) {
+	params := gocloak.GetPermissionParams{}
+	permissions, err := s.client.GetPermissions(s.ctx, s.token, modules.REALM_NAME, clientName, params)
+	if err != nil {
+		return nil, err
+	}
+	return permissions, nil
+}
+
+func (s *permissionService) Diff(keycloakConfig *modules.KeycloakClientDiffGenCtx, opsConfig *modules.KeycloakOpsConfig) error {
+	var ops []modules.PermissionsOp = make([]modules.PermissionsOp, 0)
+	var existingPerms []*gocloak.PermissionRepresentation
+	if keycloakConfig.ClientOp.Op == "NONE" {
+		var err error
+		existingPerms, err = s.getPermissions(*keycloakConfig.ClientOp.Client.ID)
+		if err != nil {
+			return err
+		}
+	}
+	expectedPerms := keycloakConfig.Config.Permissions
+	var expectedPermsMap map[string]gocloak.PermissionRepresentation = make(map[string]gocloak.PermissionRepresentation)
+	for _, expectedPerm := range expectedPerms {
+		expectedPermsMap[*expectedPerm.Name] = expectedPerm
+	}
+	for _, existingPerm := range existingPerms {
+		name := *existingPerm.Name
+		_, found := expectedPermsMap[name]
+		if found {
+			delete(expectedPermsMap, name)
+		} else {
+			log.Info().Str("name", name).Msg("Deprecated/Old Permission detected, delete op required")
+			ops = append(ops, modules.PermissionsOp{
+				Op:       "DEL",
+				PermSpec: *existingPerm,
+			})
+		}
+	}
+	for key := range expectedPermsMap {
+		perm := expectedPermsMap[key]
+		log.Info().Str("name", *perm.Name).Str("key", key).Msg("New permission detected, add op required")
+		ops = append(ops, modules.PermissionsOp{
+			Op:       "ADD",
+			PermSpec: perm,
+		})
+	}
+	opsConfig.Permissions = ops
 	return nil
 }

@@ -40,6 +40,7 @@ func init() {
 		token:  ctx.Token.AccessToken,
 	}
 	modules.Modules["resources"] = service
+	modules.DiffModules["resources"] = service
 }
 
 func (s *resourceService) addResource(clientId string, resource gocloak.ResourceRepresentation) error {
@@ -50,5 +51,52 @@ func (s *resourceService) addResource(clientId string, resource gocloak.Resource
 	} else {
 		log.Info().Str("name", *resource.Name).Msg("Resource created")
 	}
+	return nil
+}
+func (s *resourceService) getResources(clientName string) ([]*gocloak.ResourceRepresentation, error) {
+	params := gocloak.GetResourceParams{}
+	resources, err := s.client.GetResources(s.ctx, s.token, modules.REALM_NAME, clientName, params)
+	if err != nil {
+		return nil, err
+	}
+	return resources, nil
+}
+func (s *resourceService) Diff(keycloakConfig *modules.KeycloakClientDiffGenCtx, opsConfig *modules.KeycloakOpsConfig) error {
+	var ops []modules.ResourcesOp = make([]modules.ResourcesOp, 0)
+	var resources []*gocloak.ResourceRepresentation
+	if keycloakConfig.ClientOp.Op == "NONE" {
+		var err error
+		resources, err = s.getResources(*keycloakConfig.ClientOp.Client.ID)
+		if err != nil {
+			return err
+		}
+	}
+	x0 := keycloakConfig.Config.Resources
+	var inputResources map[string]gocloak.ResourceRepresentation = make(map[string]gocloak.ResourceRepresentation)
+	for _, inputResource := range x0 {
+		inputResources[*inputResource.Name] = inputResource
+	}
+	for _, resource := range resources {
+		name := *resource.Name
+		_, found := inputResources[name]
+		if found {
+			delete(inputResources, name)
+		} else {
+			log.Info().Str("name", name).Msg("Deprecated/Old Resource detected, delete op required")
+			ops = append(ops, modules.ResourcesOp{
+				Op:           "DEL",
+				ResourceSpec: *resource,
+			})
+		}
+	}
+	for key := range inputResources {
+		resource := inputResources[key]
+		log.Info().Str("name", *resource.Name).Str("key", key).Msg("New resource detected, add op required")
+		ops = append(ops, modules.ResourcesOp{
+			Op:           "ADD",
+			ResourceSpec: resource,
+		})
+	}
+	opsConfig.Resources = ops
 	return nil
 }
