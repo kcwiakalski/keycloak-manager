@@ -39,13 +39,17 @@ func (s *scopeService) Order() int {
 }
 
 // implementation of modules.DiffHandler.Diff method
-func (s *scopeService) Diff(keycloakConfig *modules.DiffGenCtx, opsConfig *modules.KeycloakOpsConfig) error {
+func (s *scopeService) Diff(keycloakConfig *modules.KeycloakClientDiffGenCtx, opsConfig *modules.KeycloakOpsConfig) error {
 	var ops []modules.ScopesOp = make([]modules.ScopesOp, 0)
-	scopes, err := s.getScopes(*keycloakConfig.Client.ID)
-	if err != nil {
-		return err
+	var scopes []*gocloak.ScopeRepresentation
+	if keycloakConfig.ClientOp.Op == "NONE" {
+		var err error
+		scopes, err = s.getScopes(*keycloakConfig.ClientOp.Client.ID)
+		if err != nil {
+			return err
+		}
 	}
-	x0 := keycloakConfig.Config.ClientConfig.Scopes
+	x0 := keycloakConfig.Config.Scopes
 	var inputScopes map[string]gocloak.ScopeRepresentation = make(map[string]gocloak.ScopeRepresentation)
 	for _, inputScope := range x0 {
 		inputScopes[*inputScope.Name] = inputScope
@@ -71,6 +75,7 @@ func (s *scopeService) Diff(keycloakConfig *modules.DiffGenCtx, opsConfig *modul
 			ScopeSpec: scope,
 		})
 	}
+	opsConfig.Scopes = ops
 	return nil
 }
 

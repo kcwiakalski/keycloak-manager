@@ -40,6 +40,7 @@ func init() {
 		token:  ctx.Token.AccessToken,
 	}
 	modules.Modules["policies"] = service
+	modules.DiffModules["policies"] = service
 }
 
 func (s *policyService) CreatePolicy(clientId string, policy *gocloak.PolicyRepresentation) error {
@@ -51,4 +52,52 @@ func (s *policyService) CreatePolicy(clientId string, policy *gocloak.PolicyRepr
 		log.Info().Str("name", *policy.Name).Msg("policy created")
 	}
 	return nil
+}
+
+func (s *policyService) Diff(keycloakConfig *modules.KeycloakClientDiffGenCtx, opsConfig *modules.KeycloakOpsConfig) error {
+	var ops []modules.PoliciesOp = make([]modules.PoliciesOp, 0)
+	var existingPolicies []*gocloak.PolicyRepresentation
+	if keycloakConfig.ClientOp.Op == "NONE" {
+		var err error
+		existingPolicies, err = s.getPoliciesForClient(*keycloakConfig.ClientOp.Client.ID)
+		if err != nil {
+			return err
+		}
+	}
+	expectedPolicies := keycloakConfig.Config.Policies
+	var expectedPoliciesMap map[string]gocloak.PolicyRepresentation = make(map[string]gocloak.PolicyRepresentation)
+	for _, expectedPolicy := range expectedPolicies {
+		expectedPoliciesMap[*expectedPolicy.Name] = expectedPolicy
+	}
+	for _, policy := range existingPolicies {
+		name := *policy.Name
+		_, found := expectedPoliciesMap[name]
+		if found {
+			delete(expectedPoliciesMap, name)
+		} else {
+			log.Info().Str("name", name).Msg("Deprecated/Old Policy detected, delete op required")
+			ops = append(ops, modules.PoliciesOp{
+				Op:         "DEL",
+				PolicySpec: *policy,
+			})
+		}
+	}
+	for key := range expectedPoliciesMap {
+		policy := expectedPoliciesMap[key]
+		log.Info().Str("name", *policy.Name).Str("key", key).Msg("New resource detected, add op required")
+		ops = append(ops, modules.PoliciesOp{
+			Op:         "ADD",
+			PolicySpec: policy,
+		})
+	}
+	opsConfig.Policies = ops
+	return nil
+}
+func (s *policyService) getPoliciesForClient(clientName string) ([]*gocloak.PolicyRepresentation, error) {
+	params := gocloak.GetPolicyParams{}
+	policies, err := s.client.GetPolicies(s.ctx, s.token, modules.REALM_NAME, clientName, params)
+	if err != nil {
+		return nil, err
+	}
+	return policies, nil
 }
