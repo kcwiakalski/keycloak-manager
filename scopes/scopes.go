@@ -17,10 +17,10 @@ type scopeService struct {
 var service *scopeService
 
 // implementation of modules.ConfigurationHandler.Apply method
-func (s *scopeService) Apply(keycloakConfig *modules.ConfigurationContext) error {
+func (s *scopeService) Apply(keycloakConfig *modules.ClientChangeContext) error {
 	var finalError error
 	clientId := *keycloakConfig.Client.ID
-	for _, scope := range keycloakConfig.Config.ClientConfig.Scopes {
+	for _, scope := range keycloakConfig.Changes.Scopes {
 		if scope.Op == "ADD" {
 			err := service.addScope(clientId, &scope.ScopeSpec)
 			if err != nil {
@@ -39,17 +39,17 @@ func (s *scopeService) Order() int {
 }
 
 // implementation of modules.DiffHandler.Diff method
-func (s *scopeService) Diff(keycloakConfig *modules.KeycloakClientDiffGenCtx, opsConfig *modules.KeycloakOpsConfig) error {
+func (s *scopeService) Diff(keycloakConfig *modules.ClientDiffContext, opsConfig *modules.ClientChanges) error {
 	var ops []modules.ScopesOp = make([]modules.ScopesOp, 0)
 	var scopes []*gocloak.ScopeRepresentation
 	if keycloakConfig.ClientOp.Op == "NONE" {
 		var err error
-		scopes, err = s.getScopes(*keycloakConfig.ClientOp.Client.ID)
+		scopes, err = s.getScopes(*keycloakConfig.ClientOp.ClientSpec.ID)
 		if err != nil {
 			return err
 		}
 	}
-	x0 := keycloakConfig.Config.Scopes
+	x0 := keycloakConfig.Declaration.Scopes
 	var inputScopes map[string]gocloak.ScopeRepresentation = make(map[string]gocloak.ScopeRepresentation)
 	for _, inputScope := range x0 {
 		inputScopes[*inputScope.Name] = inputScope
