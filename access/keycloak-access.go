@@ -13,7 +13,7 @@ type KeycloakContext struct {
 }
 
 func KeycloakConnection() *KeycloakContext {
-	client := gocloak.NewClient("http://swarm-local:9010")
+	client := gocloak.NewClient("http://swarm-local:9723")
 	ctx := context.Background()
 	token, err := client.LoginAdmin(ctx, "admin", "password", "master")
 	if err != nil {

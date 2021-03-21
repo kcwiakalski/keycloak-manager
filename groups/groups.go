@@ -2,6 +2,7 @@ package groups
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"keycloak-tools/access"
 	"keycloak-tools/modules"
@@ -28,15 +29,16 @@ func New(ctx *access.KeycloakContext) *GroupService {
 var groupsService *GroupService
 
 // groupsService := New(keycloak)
-func (s *GroupService) Apply(keycloakConfig *modules.ConfigurationContext) error {
-	var finalError error
-	for _, group := range keycloakConfig.Config.Groups {
-		err := groupsService.AddGroup(&group.GroupSpec)
-		if err != nil {
-			finalError = err
-		}
-	}
-	return finalError
+func (s *GroupService) Apply(keycloakConfig *modules.ClientChangeContext) error {
+	// var finalError error
+	// for _, group := range keycloakConfig.Config.Groups {
+	// 	err := groupsService.AddGroup(&group.GroupSpec)
+	// 	if err != nil {
+	// 		finalError = err
+	// 	}
+	// }
+	// return finalError
+	return errors.New("not implemented yet")
 }
 
 func (s *GroupService) Order() int {

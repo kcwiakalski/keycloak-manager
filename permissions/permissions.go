@@ -27,13 +27,20 @@ func init() {
 	modules.DiffModules["permissions"] = service
 }
 
-func (s *permissionService) Apply(keycloakConfig *modules.ConfigurationContext) error {
+func (s *permissionService) Apply(keycloakConfig *modules.ClientChangeContext) error {
 	var finalError error
 	clientId := *keycloakConfig.Client.ID
-	for _, perm := range keycloakConfig.Config.ClientConfig.Permissions {
-		err := service.AddPermission(clientId, perm.PermSpec)
-		if err != nil {
-			finalError = err
+	for _, perm := range keycloakConfig.Changes.Permissions {
+		if perm.Op == "ADD" {
+			err := service.AddPermission(clientId, perm.PermSpec)
+			if err != nil {
+				finalError = err
+			}
+		} else if perm.Op == "DEL" {
+			err := service.DeletePermission(clientId, perm.PermSpec)
+			if err != nil {
+				finalError = err
+			}
 		}
 	}
 	return finalError
@@ -44,12 +51,22 @@ func (s *permissionService) Order() int {
 }
 
 func (s *permissionService) AddPermission(clientId string, permission gocloak.PermissionRepresentation) error {
-	_, err := s.client.CreatePermission(s.ctx, s.token, "products", clientId, permission)
+	_, err := s.client.CreatePermission(s.ctx, s.token, modules.REALM_NAME, clientId, permission)
 	if err != nil {
 		log.Err(err).Str("name", *permission.Name).Msg("Cannot create permission")
 		return err
 	} else {
 		log.Info().Str("name", *permission.Name).Msg("Permission created")
+	}
+	return nil
+}
+func (s *permissionService) DeletePermission(clientId string, permission gocloak.PermissionRepresentation) error {
+	err := s.client.DeletePermission(s.ctx, s.token, modules.REALM_NAME, clientId, *permission.ID)
+	if err != nil {
+		log.Err(err).Str("name", *permission.Name).Msg("Cannot delete permission")
+		return err
+	} else {
+		log.Info().Str("name", *permission.Name).Msg("Permission deleted")
 	}
 	return nil
 }
@@ -63,17 +80,17 @@ func (s *permissionService) getPermissions(clientName string) ([]*gocloak.Permis
 	return permissions, nil
 }
 
-func (s *permissionService) Diff(keycloakConfig *modules.KeycloakClientDiffGenCtx, opsConfig *modules.KeycloakOpsConfig) error {
+func (s *permissionService) Diff(keycloakConfig *modules.ClientDiffContext, opsConfig *modules.ClientChanges) error {
 	var ops []modules.PermissionsOp = make([]modules.PermissionsOp, 0)
 	var existingPerms []*gocloak.PermissionRepresentation
 	if keycloakConfig.ClientOp.Op == "NONE" {
 		var err error
-		existingPerms, err = s.getPermissions(*keycloakConfig.ClientOp.Client.ID)
+		existingPerms, err = s.getPermissions(*keycloakConfig.ClientOp.ClientSpec.ID)
 		if err != nil {
 			return err
 		}
 	}
-	expectedPerms := keycloakConfig.Config.Permissions
+	expectedPerms := keycloakConfig.Declaration.Permissions
 	var expectedPermsMap map[string]gocloak.PermissionRepresentation = make(map[string]gocloak.PermissionRepresentation)
 	for _, expectedPerm := range expectedPerms {
 		expectedPermsMap[*expectedPerm.Name] = expectedPerm

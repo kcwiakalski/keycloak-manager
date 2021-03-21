@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"keycloak-tools/access"
+	"keycloak-tools/modules"
 
 	"github.com/Nerzal/gocloak/v7"
+	"github.com/rs/zerolog/log"
 )
 
 type ClientService struct {
@@ -32,4 +34,14 @@ func (s *ClientService) FindClientByName(name string) (*gocloak.Client, error) {
 		}
 	}
 	return nil, fmt.Errorf("Cannot find client with name %s", name)
+}
+
+func (s *ClientService) CreateClient(client gocloak.Client) (string, error) {
+	id, err := s.client.CreateClient(s.ctx, s.token, modules.REALM_NAME, client)
+	if err != nil {
+		log.Fatal().Err(err).Str("clientName", *client.ClientID).Msg("Cannot create client")
+	} else {
+		client.Name = &id
+	}
+	return id, nil
 }
