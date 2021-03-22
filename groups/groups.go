@@ -2,7 +2,6 @@ package groups
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"keycloak-tools/access"
 	"keycloak-tools/modules"
@@ -29,16 +28,17 @@ func new(ctx *access.KeycloakContext) *GroupService {
 var groupsService *GroupService
 
 // groupsService := New(keycloak)
-func (s *GroupService) Apply(keycloakConfig *modules.ClientChangeContext) error {
-	// var finalError error
-	// for _, group := range keycloakConfig.Config.Groups {
-	// 	err := groupsService.AddGroup(&group.GroupSpec)
-	// 	if err != nil {
-	// 		finalError = err
-	// 	}
-	// }
-	// return finalError
-	return errors.New("not implemented yet")
+func (s *GroupService) Apply(ctx *modules.ClientChangeContext) error {
+	var finalError error
+	for _, groupChange := range ctx.Changes.Groups {
+		if groupChange.Op == "ADD" {
+			err := groupsService.AddGroup(&groupChange.GroupSpec)
+			if err != nil {
+				finalError = err
+			}
+		}
+	}
+	return finalError
 }
 
 func (s *GroupService) Order() int {
@@ -50,6 +50,7 @@ func init() {
 	modules.Modules["groups"] = groupsService
 	modules.DiffModules["groups"] = groupsService
 }
+
 func (s *GroupService) getGroupByName(groupName string) *gocloak.Group {
 	first := 0
 	max := 20
@@ -96,10 +97,33 @@ func (s *GroupService) getGroupByPath(groupPath *gocloak.Group) *gocloak.Group {
 	}
 	existingGroups, _ := s.client.GetGroups(s.ctx, s.token, modules.REALM_NAME, params)
 	for _, group := range existingGroups {
-		matchedGroup := groupsService.findDirectParentGroup(groupPath, group)
+		matchedGroup := groupsService.findGroupInTopLevelGroup(groupPath, group)
 		if matchedGroup != nil {
 			return matchedGroup
 		}
+	}
+	return nil
+}
+
+func (s *GroupService) findGroupInTopLevelGroup(group *gocloak.Group, topLevelGroup *gocloak.Group) *gocloak.Group {
+	pathElements := strings.Split(*group.Path, "/")
+	nestedGroup := topLevelGroup
+	if pathElements[0] != "" || pathElements[1] != *topLevelGroup.Name {
+		return nil
+	}
+	index := 2
+	for nestedGroup != nil && index < len(pathElements) {
+		var matchedGroup *gocloak.Group
+		for _, innerGroup := range *nestedGroup.SubGroups {
+			if *innerGroup.Name == pathElements[index] {
+				matchedGroup = &innerGroup
+			}
+		}
+		nestedGroup = matchedGroup
+		index++
+	}
+	if nestedGroup != nil && *group.Path == *nestedGroup.Path {
+		return nestedGroup
 	}
 	return nil
 }
