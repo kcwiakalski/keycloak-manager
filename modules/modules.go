@@ -20,7 +20,7 @@ type ClientDeclaration struct {
 	Resources   []gocloak.ResourceRepresentation   `json:"resources,omitempty"`
 	Policies    []gocloak.PolicyRepresentation     `json:"policies,omitempty"`
 	Permissions []gocloak.PermissionRepresentation `json:"permissions,omitempty"`
-	Groups      []gocloak.GroupDefinition          `json:"groups,omitempty"`
+	Groups      []gocloak.Group                    `json:"groups,omitempty"`
 }
 
 type ClientChanges struct {
@@ -29,7 +29,7 @@ type ClientChanges struct {
 	Resources   []ResourcesOp   `json:"resources,omitempty"`
 	Policies    []PoliciesOp    `json:"policies,omitempty"`
 	Permissions []PermissionsOp `json:"permissions,omitempty"`
-	Groups      []GroupsOp      `json:"groups"`
+	Groups      []GroupsOp      `json:"groups,omitempty"`
 }
 
 type ClientChangeContext struct {

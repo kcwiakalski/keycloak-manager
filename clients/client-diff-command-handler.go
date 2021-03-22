@@ -21,6 +21,7 @@ func HandleClientDiffCommand(cfgFileName string, changesFileName string) {
 			ClientSpec: gocloak.Client{
 				ClientID: ctx.ClientOp.ClientSpec.ClientID,
 			},
+			Op: "NONE",
 		}
 	} else {
 		diffConfig.Client = *ctx.ClientOp

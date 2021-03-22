@@ -16,22 +16,6 @@ type resourceService struct {
 
 var service *resourceService
 
-func (s *resourceService) Apply(keycloakConfig *modules.ConfigurationContext) error {
-	var finalError error
-	clientId := *keycloakConfig.Client.ID
-	for _, resource := range keycloakConfig.Config.ClientConfig.Resources {
-		err := service.addResource(clientId, resource.ResourceSpec)
-		if err != nil {
-			finalError = err
-		}
-	}
-	return finalError
-}
-
-func (s *resourceService) Order() int {
-	return 2
-}
-
 func init() {
 	ctx := modules.Keycloak
 	service = &resourceService{
@@ -61,17 +45,25 @@ func (s *resourceService) getResources(clientName string) ([]*gocloak.ResourceRe
 	}
 	return resources, nil
 }
-func (s *resourceService) Diff(keycloakConfig *modules.KeycloakClientDiffGenCtx, opsConfig *modules.KeycloakOpsConfig) error {
+func (s *resourceService) deleteResource(clientId string, resource gocloak.ResourceRepresentation) error {
+	err := s.client.DeleteResource(s.ctx, s.token, modules.REALM_NAME, clientId, *resource.ID)
+	if err != nil {
+		log.Err(err).Str("resourceName", *resource.Name).Msg("Cannot delete deprecated resource")
+		return err
+	}
+	return nil
+}
+func (s *resourceService) Diff(keycloakConfig *modules.ClientDiffContext, opsConfig *modules.ClientChanges) error {
 	var ops []modules.ResourcesOp = make([]modules.ResourcesOp, 0)
 	var resources []*gocloak.ResourceRepresentation
 	if keycloakConfig.ClientOp.Op == "NONE" {
 		var err error
-		resources, err = s.getResources(*keycloakConfig.ClientOp.Client.ID)
+		resources, err = s.getResources(*keycloakConfig.ClientOp.ClientSpec.ID)
 		if err != nil {
 			return err
 		}
 	}
-	x0 := keycloakConfig.Config.Resources
+	x0 := keycloakConfig.Declaration.Resources
 	var inputResources map[string]gocloak.ResourceRepresentation = make(map[string]gocloak.ResourceRepresentation)
 	for _, inputResource := range x0 {
 		inputResources[*inputResource.Name] = inputResource
@@ -99,4 +91,27 @@ func (s *resourceService) Diff(keycloakConfig *modules.KeycloakClientDiffGenCtx,
 	}
 	opsConfig.Resources = ops
 	return nil
+}
+
+func (s *resourceService) Apply(keycloakConfig *modules.ClientChangeContext) error {
+	var finalError error
+	clientId := *keycloakConfig.Client.ID
+	for _, resource := range keycloakConfig.Changes.Resources {
+		if resource.Op == "ADD" {
+			err := service.addResource(clientId, resource.ResourceSpec)
+			if err != nil {
+				finalError = err
+			}
+		} else if resource.Op == "DEL" {
+			err := service.deleteResource(clientId, resource.ResourceSpec)
+			if err != nil {
+				finalError = err
+			}
+		}
+	}
+	return finalError
+}
+
+func (s *resourceService) Order() int {
+	return 2
 }
