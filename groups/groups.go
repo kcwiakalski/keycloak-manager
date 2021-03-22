@@ -2,7 +2,6 @@ package groups
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"keycloak-tools/access"
 	"keycloak-tools/modules"
@@ -18,7 +17,7 @@ type GroupService struct {
 	token  string
 }
 
-func New(ctx *access.KeycloakContext) *GroupService {
+func new(ctx *access.KeycloakContext) *GroupService {
 	return &GroupService{
 		client: ctx.Client,
 		ctx:    ctx.Ctx,
@@ -29,16 +28,17 @@ func New(ctx *access.KeycloakContext) *GroupService {
 var groupsService *GroupService
 
 // groupsService := New(keycloak)
-func (s *GroupService) Apply(keycloakConfig *modules.ClientChangeContext) error {
-	// var finalError error
-	// for _, group := range keycloakConfig.Config.Groups {
-	// 	err := groupsService.AddGroup(&group.GroupSpec)
-	// 	if err != nil {
-	// 		finalError = err
-	// 	}
-	// }
-	// return finalError
-	return errors.New("not implemented yet")
+func (s *GroupService) Apply(ctx *modules.ClientChangeContext) error {
+	var finalError error
+	for _, groupChange := range ctx.Changes.Groups {
+		if groupChange.Op == "ADD" {
+			err := groupsService.AddGroup(&groupChange.GroupSpec)
+			if err != nil {
+				finalError = err
+			}
+		}
+	}
+	return finalError
 }
 
 func (s *GroupService) Order() int {
@@ -46,9 +46,11 @@ func (s *GroupService) Order() int {
 }
 
 func init() {
-	groupsService = New(modules.Keycloak)
+	groupsService = new(modules.Keycloak)
 	modules.Modules["groups"] = groupsService
+	modules.DiffModules["groups"] = groupsService
 }
+
 func (s *GroupService) getGroupByName(groupName string) *gocloak.Group {
 	first := 0
 	max := 20
@@ -69,11 +71,59 @@ func (s *GroupService) getGroupByName(groupName string) *gocloak.Group {
 		Search: &searchTerm,
 		Full:   &fullSearch,
 	}
-	existingGroups, _ := s.client.GetGroups(s.ctx, s.token, "products", params)
+	existingGroups, _ := s.client.GetGroups(s.ctx, s.token, modules.REALM_NAME, params)
 	for _, group := range existingGroups {
 		if *group.Name == groupName {
 			return group
 		}
+	}
+	return nil
+}
+func (s *GroupService) getGroupByPath(groupPath *gocloak.Group) *gocloak.Group {
+	first := 0
+	max := 20
+	fullSearch := true
+	var pathElements []string
+	searchTerm := groupPath.Path
+	if strings.ContainsAny(*groupPath.Path, "/") {
+		pathElements = strings.Split(*groupPath.Path, "/")
+		searchTerm = &pathElements[1]
+	}
+	params := gocloak.GetGroupsParams{
+		First:  &first,
+		Max:    &max,
+		Search: searchTerm,
+		Full:   &fullSearch,
+	}
+	existingGroups, _ := s.client.GetGroups(s.ctx, s.token, modules.REALM_NAME, params)
+	for _, group := range existingGroups {
+		matchedGroup := groupsService.findGroupInTopLevelGroup(groupPath, group)
+		if matchedGroup != nil {
+			return matchedGroup
+		}
+	}
+	return nil
+}
+
+func (s *GroupService) findGroupInTopLevelGroup(group *gocloak.Group, topLevelGroup *gocloak.Group) *gocloak.Group {
+	pathElements := strings.Split(*group.Path, "/")
+	nestedGroup := topLevelGroup
+	if pathElements[0] != "" || pathElements[1] != *topLevelGroup.Name {
+		return nil
+	}
+	index := 2
+	for nestedGroup != nil && index < len(pathElements) {
+		var matchedGroup *gocloak.Group
+		for _, innerGroup := range *nestedGroup.SubGroups {
+			if *innerGroup.Name == pathElements[index] {
+				matchedGroup = &innerGroup
+			}
+		}
+		nestedGroup = matchedGroup
+		index++
+	}
+	if nestedGroup != nil && *group.Path == *nestedGroup.Path {
+		return nestedGroup
 	}
 	return nil
 }
@@ -142,6 +192,23 @@ func (s *GroupService) AddGroup(group *gocloak.Group) error {
 	} else {
 		log.Error().Str("group", *group.Name).Msg("Invalid group definition")
 		return fmt.Errorf("Invalid group definition for name %s", *group.Name)
+	}
+	return nil
+}
+
+func (s *GroupService) Diff(declaration *modules.ClientDiffContext, changes *modules.ClientChanges) error {
+	var ops []modules.GroupsOp = make([]modules.GroupsOp, 0)
+	for _, expectedGroup := range declaration.Declaration.Groups {
+		existingGroup := s.getGroupByPath(&expectedGroup)
+		if existingGroup == nil {
+			ops = append(ops, modules.GroupsOp{
+				Op:        "ADD",
+				GroupSpec: expectedGroup,
+			})
+		}
+	}
+	if len(ops) > 0 {
+		changes.Groups = ops
 	}
 	return nil
 }

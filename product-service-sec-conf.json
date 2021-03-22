@@ -13,6 +13,32 @@
         "serviceAccountsEnabled": true,
         "publicClient": false
     },
+    "groups": [
+        {
+            "name": "employee-standard",
+            "path": "/employee-standard"
+        },
+        {
+            "name": "task-manager",
+            "path": "/task-manager"
+        },
+        {
+            "name": "external-user",
+            "path": "/external-user"
+        },
+        {
+            "name": "employee-data-admin",
+            "path": "/employee-standard/employee-data-admin"
+        },
+        {
+            "name": "employee-system-admin",
+            "path": "/employee-standard/employee-data-admin/employee-system-admin"
+        },
+        {
+            "name": "employee-system-superadmin",
+            "path": "/employee-standard/employee-data-admin/employee-system-admin/super-admin"
+        }
+    ],
     "scopes": [
         {
             "name": "configuration.attributes.manage",

@@ -16,8 +16,8 @@ import (
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 	command := "client"
-	// mode := "diff"
-	mode := "execute"
+	mode := "diff"
+	// mode := "execute"
 	configFile := "product-service-sec-conf.json"
 	configFileChange := "product-service-sec-change.json"
 
