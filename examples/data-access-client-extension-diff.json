@@ -1,0 +1,31 @@
+{
+    "client": {
+        "op": "NONE",
+        "clientSpec": {
+            "clientId": "sample-client"
+        }
+    },
+    "scopes": [
+        {
+            "op": "ADD",
+            "scopeSpec": {
+                "displayName": "New fancy scope",
+                "name": "fancy.scope"
+            }
+        }
+    ],
+    "resources": [
+        {
+            "op": "ADD",
+            "resourceSpec": {
+                "displayName": "Completly new resource",
+                "name": "fancy-new-resource",
+                "scopes": [
+                    {
+                        "name": "fancy.scope"
+                    }
+                ]
+            }
+        }
+    ]
+}
