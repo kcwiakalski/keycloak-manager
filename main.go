@@ -3,6 +3,7 @@ package main
 import (
 	"keycloak-tools/clients"
 	_ "keycloak-tools/groups"
+	"keycloak-tools/model"
 	_ "keycloak-tools/permissions"
 	_ "keycloak-tools/policies"
 	_ "keycloak-tools/resources"
@@ -15,18 +16,17 @@ import (
 
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
-	command := "client"
-	mode := "diff"
-	// mode := "execute"
-	configFile := "product-service-sec-conf.json"
-	configFileChange := "product-service-sec-change.json"
 
-	if command == "client" {
+	switch model.Ctx.Command() {
+	case "client":
+		file := model.CLI.Client.File
+		mode := model.CLI.Client.Mode
 		if mode == "diff" {
-			clients.HandleClientDiffCommand(configFile, configFileChange)
+			output := model.CLI.Client.Output
+			clients.HandleClientDiffCommand(file, output)
 		}
-		if mode == "execute" {
-			clients.ApplyClientChanged(configFileChange)
+		if mode == "apply" {
+			clients.ApplyClientChanged(file)
 		}
 	}
 }
