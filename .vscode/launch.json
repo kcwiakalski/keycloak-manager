@@ -4,15 +4,46 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        
         {
-            "name": "Launch",
+            "name": "Client diff mode",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "${fileDirname}",
             "env": {},
-            "args": []
+            "args": [
+                "client",
+                "-m",
+                "diff",
+                "-f",
+                "product-service-sec-conf.json",
+                "-o",
+                "product-service-sec-change.json",
+                "-r",
+                "master",
+                "-u",
+                "admin",
+                "--pass",
+                "password",
+                "-p",
+                "9723",
+                "--host=swarm-local"
+            ]
+        },
+        {
+            "name": "Client apply mode",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${fileDirname}",
+            "env": {},
+            "args": [
+                "client",
+                "-m",
+                "apply",
+                "-f",
+                "product-service-sec-change.json"
+            ]
         }
     ]
 }

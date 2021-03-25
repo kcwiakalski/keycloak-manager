@@ -2,8 +2,10 @@ package modules
 
 import (
 	"keycloak-tools/access"
+	"keycloak-tools/model"
 
 	"github.com/Nerzal/gocloak/v7"
+	"github.com/alecthomas/kong"
 )
 
 //TODO replace with proper config from file or env vars
@@ -85,6 +87,7 @@ var Modules map[string]ConfigurationHandler = make(map[string]ConfigurationHandl
 var DiffModules map[string]DiffHandler = make(map[string]DiffHandler)
 
 func init() {
+	model.Ctx = kong.Parse(&model.CLI)
 	Keycloak = access.KeycloakConnection()
 }
 

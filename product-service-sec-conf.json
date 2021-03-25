@@ -35,7 +35,7 @@
             "path": "/employee-standard/employee-data-admin/employee-system-admin"
         },
         {
-            "name": "employee-system-superadmin",
+            "name": "super-admin",
             "path": "/employee-standard/employee-data-admin/employee-system-admin/super-admin"
         }
     ],
