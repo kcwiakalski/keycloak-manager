@@ -1,0 +1,145 @@
+{
+    "clientDefinition": {
+        "enabled": true,
+        "redirectUris": [
+            "*"
+        ],
+        "clientId": "sample-client",
+        "protocol": "openid-connect",
+        "attributes": {
+            "login_theme": "base"
+        },
+        "authorizationServicesEnabled": true,
+        "serviceAccountsEnabled": true,
+        "publicClient": false
+    },
+    "groups": [
+        {
+            "name": "data-user",
+            "path": "/data-user"
+        },
+        {
+            "name": "data-creator",
+            "path": "/data-user/data-creator"
+        },
+        {
+            "name": "sysadmin",
+            "path": "/sysadmin"
+        }
+    ],
+    "scopes": [
+        {
+            "name": "read.all",
+            "displayName": "Allows read all data"
+        },
+        {
+            "name": "write.all",
+            "displayName": "Allows writing all data"
+        },
+        {
+            "name": "manage.config",
+            "displayName": "Allows management of system configuration"
+        },
+        {
+            "displayName": "New fancy scope",
+            "name": "fancy.scope"
+        }
+    ],
+    "resources": [
+        {
+            "name": "data",
+            "displayName": "Data access resource",
+            "scopes": [
+                {
+                    "name": "read.all"
+                },
+                {
+                    "name": "write.all"
+                }
+            ]
+        },
+        {
+            "name": "system-configuration",
+            "displayName": "System configuration management",
+            "scopes": [
+                {
+                    "name": "manage.config"
+                }
+            ]
+        },
+        {
+            "name": "fancy-new-resource",
+            "displayName": "Completly new resource",
+            "scopes": [
+                {
+                    "name": "fancy.scope"
+                }
+            ]
+        }
+    ],
+    "policies": [
+        {
+            "name": "is_system_admin",
+            "type": "group",
+            "description": "Policy detecting if user is system administrator, giving him total control over system configuration",
+            "groups": [
+                {
+                    "path": "/sysadmin",
+                    "extendChildren": true
+                }
+            ]
+        },
+        {
+            "name": "is_data_user",
+            "type": "group",
+            "description": "Policy detecting if user can read data",
+            "groups": [
+                {
+                    "path": "/data-user",
+                    "extendChildren": true
+                }
+            ]
+        },
+        {
+            "name": "is_data_provider",
+            "type": "group",
+            "description": "Policy detecting if user can create data",
+            "groups": [
+                {
+                    "path": "/data-user/data-creator",
+                    "extendChildren": true
+                }
+            ]
+        }
+    ],
+    "permissions": [
+        {
+            "name": "data-read-permission",
+            "description": "Allows to access data in the system",
+            "type": "scope",
+            "resources": [
+                "data"
+            ],
+            "scopes": [
+                "read.all"
+            ],
+            "policies": [
+                "is_data_user"
+            ]
+        },
+        {
+            "name": "create-data-permission",
+            "description": "Allows to create data in the system",
+            "type": "scope",
+            "resources": [
+                "data"
+            ],
+            "scopes": [
+                "write.all"
+            ],
+            "policies": [
+                "is_data_provider"
+            ]
+        }
+    ]
+}

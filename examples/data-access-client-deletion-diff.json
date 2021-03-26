@@ -1,0 +1,21 @@
+{
+    "client": {
+       "op": "NONE",
+       "clientSpec": {
+          "clientId": "sample-client"
+       }
+    },
+    "permissions": [
+       {
+          "op": "DEL",
+          "permSpec": {
+             "decisionStrategy": "UNANIMOUS",
+             "description": "Gives control over system configuration",
+             "id": "a1323329-6f5c-477d-967d-89297234d00d",
+             "logic": "POSITIVE",
+             "name": "administer-system-permission",
+             "type": "scope"
+          }
+       }
+    ]
+ }

@@ -1,0 +1,44 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "properties": {
+        "clientDefinition": {
+            "type": "object",
+            "description": "https://www.keycloak.org/docs-api/12.0/rest-api/index.html#_clientrepresentation"
+        },
+        "groups": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "description": "https://www.keycloak.org/docs-api/12.0/rest-api/index.html#_grouprepresentation"
+            }
+        },
+        "scopes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "description": "https://www.keycloak.org/docs-api/12.0/rest-api/index.html#_clientscoperepresentation"
+            }
+        },
+        "resources": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "description": "https://www.keycloak.org/docs-api/12.0/rest-api/index.html#_resourcerepresentation"
+            }
+        },
+        "policies": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "description": "https://www.keycloak.org/docs-api/12.0/rest-api/index.html#_policyrepresentation"
+            }
+        },
+        "permissions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "description": "https://www.keycloak.org/docs-api/12.0/rest-api/index.html#_policyrepresentation"
+            }
+        }
+    }
+}
