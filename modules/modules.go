@@ -15,6 +15,7 @@ type ClientDeclaration struct {
 	Policies    []gocloak.PolicyRepresentation     `json:"policies,omitempty"`
 	Permissions []gocloak.PermissionRepresentation `json:"permissions,omitempty"`
 	Groups      []gocloak.Group                    `json:"groups,omitempty"`
+	Roles       []gocloak.Role                     `json:"roles,omitempty"`
 }
 
 type ClientChanges struct {
@@ -24,6 +25,7 @@ type ClientChanges struct {
 	Policies    []PoliciesOp    `json:"policies,omitempty"`
 	Permissions []PermissionsOp `json:"permissions,omitempty"`
 	Groups      []GroupsOp      `json:"groups,omitempty"`
+	Roles       []RolesOp       `json:"roles,omitempty"`
 }
 
 type ClientChangeContext struct {
@@ -48,6 +50,10 @@ type ClientOp struct {
 type ScopesOp struct {
 	Op        string                      `json:"op"`
 	ScopeSpec gocloak.ScopeRepresentation `json:"scopeSpec"`
+}
+type RolesOp struct {
+	Op       string       `json:"op"`
+	RoleSpec gocloak.Role `json:"roleSpec"`
 }
 
 type ResourcesOp struct {

@@ -7,6 +7,7 @@ import (
 	_ "keycloak-manager/permissions"
 	_ "keycloak-manager/policies"
 	_ "keycloak-manager/resources"
+	_ "keycloak-manager/roles"
 	_ "keycloak-manager/scopes"
 	"os"
 

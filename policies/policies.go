@@ -38,7 +38,7 @@ func (s *policyService) Apply(keycloakConfig *modules.ClientChangeContext) error
 }
 
 func (s *policyService) Order() int {
-	return 3
+	return 4
 }
 
 func init() {
@@ -53,7 +53,7 @@ func init() {
 }
 
 func (s *policyService) CreatePolicy(clientId string, policy *gocloak.PolicyRepresentation) error {
-	_, err := s.client.CreatePolicy(s.ctx, s.token, "products", clientId, *policy)
+	_, err := s.client.CreatePolicy(s.ctx, s.token, model.CLI.Realm, clientId, *policy)
 	if err != nil {
 		log.Err(err).Str("name", *policy.Name).Msg("Cannot create policy")
 		return err

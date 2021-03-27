@@ -12,6 +12,13 @@
                 "description": "https://www.keycloak.org/docs-api/12.0/rest-api/index.html#_grouprepresentation"
             }
         },
+        "roles": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "description": "https://www.keycloak.org/docs-api/12.0/rest-api/#_rolerepresentation"
+            }
+        },
         "scopes": {
             "type": "array",
             "items": {

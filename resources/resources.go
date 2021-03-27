@@ -29,7 +29,7 @@ func init() {
 }
 
 func (s *resourceService) addResource(clientId string, resource gocloak.ResourceRepresentation) error {
-	_, err := s.client.CreateResource(s.ctx, s.token, "products", clientId, resource)
+	_, err := s.client.CreateResource(s.ctx, s.token, model.CLI.Realm, clientId, resource)
 	if err != nil {
 		log.Err(err).Str("name", *resource.Name).Msg("Cannot create resource")
 		return err
@@ -114,5 +114,5 @@ func (s *resourceService) Apply(keycloakConfig *modules.ClientChangeContext) err
 }
 
 func (s *resourceService) Order() int {
-	return 2
+	return 3
 }
