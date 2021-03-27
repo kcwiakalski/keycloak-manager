@@ -7,6 +7,7 @@ Table of Content
 - [Usage](#usage)
    - [Basic usage](#basic-usage)
    - [Available commands](#available-commands)
+- [Build](#build)
 - [Features](#features)
    - [Supported operations for Keycloak client's](supported-operations-for-keycloak-client's)
    - [Configuration data model](#configuration-data-model)
@@ -134,6 +135,22 @@ Configration is describe by json object containing attributes for specific aspec
     }
 }
 ```
+
+# Build
+There are two way you can build this tool on your own:
+1. If you have golang local setup ready just clone repository and call
+   ```
+   go build
+   ```
+2. Alternatively if you have Docker installed on your machine you can use official Golang image and build biniaries without setting up local development environment. 
+   - build for linux 64-bit 
+      ```
+      docker run --rm -v "$PWD":/usr/src/keycloak-manager -w /usr/src/keycloak-manager -e GOOS=linux -e GOARCH=amd64 golang:1.14 go build
+      ```
+   - build for windows 64-bit
+      ```
+      docker run --rm -v "$PWD":/usr/src/keycloak-manager -w /usr/src/keycloak-manager -e GOOS=windows -e GOARCH=amd64 golang:1.14 go build
+      ```
 
 # Future development
 - client
