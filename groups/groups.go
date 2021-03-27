@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"keycloak-tools/access"
+	"keycloak-tools/model"
 	"keycloak-tools/modules"
 	"strings"
 
@@ -71,7 +72,7 @@ func (s *GroupService) getGroupByName(groupName string) *gocloak.Group {
 		Search: &searchTerm,
 		Full:   &fullSearch,
 	}
-	existingGroups, _ := s.client.GetGroups(s.ctx, s.token, modules.REALM_NAME, params)
+	existingGroups, _ := s.client.GetGroups(s.ctx, s.token, model.CLI.Realm, params)
 	for _, group := range existingGroups {
 		if *group.Name == groupName {
 			return group
@@ -95,7 +96,7 @@ func (s *GroupService) getGroupByPath(groupPath *gocloak.Group) *gocloak.Group {
 		Search: searchTerm,
 		Full:   &fullSearch,
 	}
-	existingGroups, _ := s.client.GetGroups(s.ctx, s.token, modules.REALM_NAME, params)
+	existingGroups, _ := s.client.GetGroups(s.ctx, s.token, model.CLI.Realm, params)
 	for _, group := range existingGroups {
 		matchedGroup := groupsService.findGroupInTopLevelGroup(groupPath, group)
 		if matchedGroup != nil {

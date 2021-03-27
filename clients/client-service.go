@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"keycloak-tools/access"
-	"keycloak-tools/modules"
+	"keycloak-tools/model"
 
 	"github.com/Nerzal/gocloak/v7"
 	"github.com/rs/zerolog/log"
@@ -37,7 +37,7 @@ func (s *ClientService) FindClientByName(name string) (*gocloak.Client, error) {
 }
 
 func (s *ClientService) CreateClient(client gocloak.Client) (string, error) {
-	id, err := s.client.CreateClient(s.ctx, s.token, modules.REALM_NAME, client)
+	id, err := s.client.CreateClient(s.ctx, s.token, model.CLI.Realm, client)
 	if err != nil {
 		log.Fatal().Err(err).Str("clientName", *client.ClientID).Msg("Cannot create client")
 	} else {

@@ -2,6 +2,7 @@ package policies
 
 import (
 	"context"
+	"keycloak-tools/model"
 	"keycloak-tools/modules"
 
 	"github.com/Nerzal/gocloak/v7"
@@ -63,7 +64,7 @@ func (s *policyService) CreatePolicy(clientId string, policy *gocloak.PolicyRepr
 }
 
 func (s *policyService) deletePolicy(clientId string, policy *gocloak.PolicyRepresentation) error {
-	err := s.client.DeletePolicy(s.ctx, s.token, modules.REALM_NAME, clientId, *policy.ID)
+	err := s.client.DeletePolicy(s.ctx, s.token, model.CLI.Realm, clientId, *policy.ID)
 	if err != nil {
 		log.Err(err).Str("name", *policy.Name).Msg("Cannot remove policy")
 		return err
@@ -116,7 +117,7 @@ func (s *policyService) getPoliciesForClient(clientName string) ([]*gocloak.Poli
 	params := gocloak.GetPolicyParams{
 		Permission: &noPerms,
 	}
-	policies, err := s.client.GetPolicies(s.ctx, s.token, modules.REALM_NAME, clientName, params)
+	policies, err := s.client.GetPolicies(s.ctx, s.token, model.CLI.Realm, clientName, params)
 	if err != nil {
 		return nil, err
 	}
