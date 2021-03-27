@@ -1,4 +1,4 @@
-module keycloak-tools
+module keycloak-manager
 
 go 1.14
 

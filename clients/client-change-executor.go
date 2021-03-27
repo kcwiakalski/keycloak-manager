@@ -1,9 +1,9 @@
 package clients
 
 import (
-	"keycloak-tools/access"
-	"keycloak-tools/modules"
-	"keycloak-tools/tools"
+	"keycloak-manager/access"
+	"keycloak-manager/modules"
+	"keycloak-manager/tools"
 
 	"github.com/rs/zerolog/log"
 )

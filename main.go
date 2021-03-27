@@ -1,13 +1,13 @@
 package main
 
 import (
-	"keycloak-tools/clients"
-	_ "keycloak-tools/groups"
-	"keycloak-tools/model"
-	_ "keycloak-tools/permissions"
-	_ "keycloak-tools/policies"
-	_ "keycloak-tools/resources"
-	_ "keycloak-tools/scopes"
+	"keycloak-manager/clients"
+	_ "keycloak-manager/groups"
+	"keycloak-manager/model"
+	_ "keycloak-manager/permissions"
+	_ "keycloak-manager/policies"
+	_ "keycloak-manager/resources"
+	_ "keycloak-manager/scopes"
 	"os"
 
 	"github.com/rs/zerolog"

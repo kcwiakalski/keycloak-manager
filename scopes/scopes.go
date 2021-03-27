@@ -2,7 +2,7 @@ package scopes
 
 import (
 	"context"
-	"keycloak-tools/modules"
+	"keycloak-manager/modules"
 
 	"github.com/Nerzal/gocloak/v7"
 	"github.com/rs/zerolog/log"
