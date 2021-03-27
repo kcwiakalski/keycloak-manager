@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"keycloak-tools/model"
 	"keycloak-tools/modules"
 
 	"github.com/Nerzal/gocloak/v7"
@@ -39,14 +40,14 @@ func (s *resourceService) addResource(clientId string, resource gocloak.Resource
 }
 func (s *resourceService) getResources(clientName string) ([]*gocloak.ResourceRepresentation, error) {
 	params := gocloak.GetResourceParams{}
-	resources, err := s.client.GetResources(s.ctx, s.token, modules.REALM_NAME, clientName, params)
+	resources, err := s.client.GetResources(s.ctx, s.token, model.CLI.Realm, clientName, params)
 	if err != nil {
 		return nil, err
 	}
 	return resources, nil
 }
 func (s *resourceService) deleteResource(clientId string, resource gocloak.ResourceRepresentation) error {
-	err := s.client.DeleteResource(s.ctx, s.token, modules.REALM_NAME, clientId, *resource.ID)
+	err := s.client.DeleteResource(s.ctx, s.token, model.CLI.Realm, clientId, *resource.ID)
 	if err != nil {
 		log.Err(err).Str("resourceName", *resource.Name).Msg("Cannot delete deprecated resource")
 		return err

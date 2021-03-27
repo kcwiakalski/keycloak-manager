@@ -2,6 +2,7 @@ package permissions
 
 import (
 	"context"
+	"keycloak-tools/model"
 	"keycloak-tools/modules"
 
 	"github.com/Nerzal/gocloak/v7"
@@ -51,7 +52,7 @@ func (s *permissionService) Order() int {
 }
 
 func (s *permissionService) AddPermission(clientId string, permission gocloak.PermissionRepresentation) error {
-	_, err := s.client.CreatePermission(s.ctx, s.token, modules.REALM_NAME, clientId, permission)
+	_, err := s.client.CreatePermission(s.ctx, s.token, model.CLI.Realm, clientId, permission)
 	if err != nil {
 		log.Err(err).Str("name", *permission.Name).Msg("Cannot create permission")
 		return err
@@ -61,7 +62,7 @@ func (s *permissionService) AddPermission(clientId string, permission gocloak.Pe
 	return nil
 }
 func (s *permissionService) DeletePermission(clientId string, permission gocloak.PermissionRepresentation) error {
-	err := s.client.DeletePermission(s.ctx, s.token, modules.REALM_NAME, clientId, *permission.ID)
+	err := s.client.DeletePermission(s.ctx, s.token, model.CLI.Realm, clientId, *permission.ID)
 	if err != nil {
 		log.Err(err).Str("name", *permission.Name).Msg("Cannot delete permission")
 		return err
@@ -73,7 +74,7 @@ func (s *permissionService) DeletePermission(clientId string, permission gocloak
 
 func (s *permissionService) getPermissions(clientName string) ([]*gocloak.PermissionRepresentation, error) {
 	params := gocloak.GetPermissionParams{}
-	permissions, err := s.client.GetPermissions(s.ctx, s.token, modules.REALM_NAME, clientName, params)
+	permissions, err := s.client.GetPermissions(s.ctx, s.token, model.CLI.Realm, clientName, params)
 	if err != nil {
 		return nil, err
 	}

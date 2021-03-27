@@ -9,7 +9,7 @@ import (
 )
 
 //TODO replace with proper config from file or env vars
-const REALM_NAME = "products"
+// const REALM_NAME = "products"
 
 // type KeycloakConfig struct {
 // 	Groups       []gocloak.Group `json:"groups"`

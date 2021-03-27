@@ -20,9 +20,9 @@
                 "-o",
                 "product-service-sec-change.json",
                 "-r",
-                "master",
+                "products",
                 "-u",
-                "admin",
+                "realm-admin",
                 "--pass",
                 "password",
                 "-p",
@@ -42,7 +42,16 @@
                 "-m",
                 "apply",
                 "-f",
-                "product-service-sec-change.json"
+                "product-service-sec-change.json",
+                "-r",
+                "products",
+                "-u",
+                "realm-admin",
+                "--pass",
+                "password",
+                "-p",
+                "9723",
+                "--host=swarm-local"
             ]
         }
     ]
