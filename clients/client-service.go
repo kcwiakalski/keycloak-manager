@@ -3,8 +3,8 @@ package clients
 import (
 	"context"
 	"fmt"
-	"keycloak-tools/access"
-	"keycloak-tools/model"
+	"keycloak-manager/access"
+	"keycloak-manager/model"
 
 	"github.com/Nerzal/gocloak/v7"
 	"github.com/rs/zerolog/log"

@@ -1,20 +1,12 @@
 package modules
 
 import (
-	"keycloak-tools/access"
-	"keycloak-tools/model"
+	"keycloak-manager/access"
+	"keycloak-manager/model"
 
 	"github.com/Nerzal/gocloak/v7"
 	"github.com/alecthomas/kong"
 )
-
-//TODO replace with proper config from file or env vars
-// const REALM_NAME = "products"
-
-// type KeycloakConfig struct {
-// 	Groups       []gocloak.Group `json:"groups"`
-// 	ClientConfig ClientConfig    `json:"clientConfig"`
-// }
 
 type ClientDeclaration struct {
 	Client      gocloak.Client                     `json:"clientDefinition"`
@@ -43,16 +35,6 @@ type ClientDiffContext struct {
 	ClientOp    *ClientOp
 	Declaration *ClientDeclaration
 }
-
-// type KeycloakOpsConfig struct {
-// 	//TODO move this to realm-dedicated part of code
-// 	Groups       []GroupsOp        `json:"groups,omitempty"`
-// 	ClientConfig ClientChangesSpec `json:"clientConfig,omitempty"`
-// 	Scopes       []ScopesOp        `json:"scopes,omitempty"`
-// 	Resources    []ResourcesOp     `json:"resources,omitempty"`
-// 	Policies     []PoliciesOp      `json:"policies,omitempty"`
-// 	Permissions  []PermissionsOp   `json:"permissions,omitempty"`
-// }
 
 type GroupsOp struct {
 	Op        string        `json:"op"`

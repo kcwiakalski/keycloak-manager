@@ -3,9 +3,9 @@ package groups
 import (
 	"context"
 	"fmt"
-	"keycloak-tools/access"
-	"keycloak-tools/model"
-	"keycloak-tools/modules"
+	"keycloak-manager/access"
+	"keycloak-manager/model"
+	"keycloak-manager/modules"
 	"strings"
 
 	"github.com/Nerzal/gocloak/v7"

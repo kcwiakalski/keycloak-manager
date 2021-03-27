@@ -2,8 +2,8 @@ package resources
 
 import (
 	"context"
-	"keycloak-tools/model"
-	"keycloak-tools/modules"
+	"keycloak-manager/model"
+	"keycloak-manager/modules"
 
 	"github.com/Nerzal/gocloak/v7"
 	"github.com/rs/zerolog/log"

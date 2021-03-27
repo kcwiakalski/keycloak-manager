@@ -16,6 +16,7 @@ Table of Content
    - [Not existing client](#not-existing-client)
    - [Adding scope and new resource to existing client](#adding-scope-and-new-resource-to-existing-client)
    - [Removing policy and permission](#removing-policy-and-permission)
+- [Downloads](#downloads)
 
 # What is it?
 Tool to configure and manage Keycloak server in terms of clients defined for realm. It is able to take configuration for client, check it against live Keycloak instance and determine what needs to be done in order to align its configuration to desired state.
@@ -39,8 +40,8 @@ Appling configuration is two-step process:
 To see all possible parameters combination use --help flag on main program.
 ## Basic usage
 ```bash
-$ ./keycloak-tools --help
-Usage: keycloak-tools <command>
+$ ./keycloak-manager --help
+Usage: keycloak-manager <command>
 
 Flags:
   -h, --help            Show context-sensitive help.
@@ -54,13 +55,13 @@ Commands:
   client
     Operates on client configuration
 
-Run "keycloak-tools <command> --help" for more information on a command.
+Run "keycloak-manager <command> --help" for more information on a command.
 ```
 ## Available commands
 * Client handling:
 ```bash
-$ ./keycloak-tools client --help
-Usage: keycloak-tools client
+$ ./keycloak-manager client --help
+Usage: keycloak-manager client
 
 Operates on client configuration
 
@@ -594,3 +595,7 @@ Let's assume we alrady have client *sample-client* in realm *sample-realm* with 
 }
 ```
 
+# Downloads
+Version 1.0
+   - [Windows 64-bit](./binaries/1.0/keycloak-manager.exe)
+   - [Linux 64-bit](./binaries/1.0/keycloak-manager)

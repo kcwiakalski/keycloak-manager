@@ -3,7 +3,7 @@ package access
 import (
 	"context"
 	"fmt"
-	"keycloak-tools/model"
+	"keycloak-manager/model"
 
 	"github.com/Nerzal/gocloak/v7"
 )
