@@ -164,7 +164,7 @@ func (s *GroupService) AddGroup(group *gocloak.Group) error {
 	pathParts := strings.Count(*group.Path, "/")
 	if pathParts == 1 && strings.TrimPrefix(*group.Path, "/") == *group.Name {
 		if !s.groupExists(*group.Name) {
-			groupId, err := s.client.CreateGroup(s.ctx, s.token, "products", *group)
+			groupId, err := s.client.CreateGroup(s.ctx, s.token, model.CLI.Realm, *group)
 			if err != nil {
 				log.Err(err).Str("name", *group.Name).Msg("Error creating group")
 				return err
@@ -183,7 +183,7 @@ func (s *GroupService) AddGroup(group *gocloak.Group) error {
 				return fmt.Errorf("Group %s with parent%s is already defined", *group.Name, *directParent.Name)
 			}
 		}
-		groupId, err := s.client.CreateChildGroup(s.ctx, s.token, "products", *directParent.ID, *group)
+		groupId, err := s.client.CreateChildGroup(s.ctx, s.token, model.CLI.Realm, *directParent.ID, *group)
 		if err != nil {
 			log.Err(err).Str("group", *group.Name).Str("parent", *directParent.Name).Msg("Cannot create child group in parent")
 			return fmt.Errorf("Cannot create child group %s in parent %s. %s", *group.Name, *directParent.Name, err.Error())

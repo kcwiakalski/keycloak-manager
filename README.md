@@ -84,6 +84,7 @@ Flags:
 |------------|-----|--------|--------|
 |client      |  x  |        |        |
 |scopes      |  x  |    x   |        | 
+|client roles|  x  |    x   |        | 
 |resources   |  x  |    x   |        | 
 |policies    |  x  |    x   |        | 
 |permissions |  x  |    x   |        | 
@@ -103,6 +104,13 @@ Configration is describe by json object containing attributes for specific aspec
             "items": {
                 "type": "object",
                 "description": "https://www.keycloak.org/docs-api/12.0/rest-api/index.html#_grouprepresentation"
+            }
+        },
+        "roles": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "description": "https://www.keycloak.org/docs-api/12.0/rest-api/#_rolerepresentation"
             }
         },
         "scopes": {
@@ -156,7 +164,6 @@ There are two way you can build this tool on your own:
 # Future development
 - client
    - handle update operations
-   - manage client roles
    ...
 - realm - new configuration area
    - basic realm management

@@ -24,7 +24,7 @@ func New(ctx *access.KeycloakContext) *ClientService {
 	}
 }
 func (s *ClientService) FindClientByName(name string) (*gocloak.Client, error) {
-	clients, err := s.client.GetClients(s.ctx, s.token, "products", gocloak.GetClientsParams{})
+	clients, err := s.client.GetClients(s.ctx, s.token, model.CLI.Realm, gocloak.GetClientsParams{})
 	if err != nil {
 		return nil, err
 	}

@@ -39,6 +39,16 @@
             "path": "/employee-standard/employee-data-admin/employee-system-admin/super-admin"
         }
     ],
+    "roles":[
+        {
+            "name": "manager-role",
+            "displayName": "Allows management of everthing"
+        },
+        {
+            "name": "viewer-role",
+            "displayName": "Allows view of everthing"
+        }
+    ],
     "scopes": [
         {
             "name": "configuration.attributes.manage",

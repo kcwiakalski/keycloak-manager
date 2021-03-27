@@ -2,6 +2,7 @@ package scopes
 
 import (
 	"context"
+	"keycloak-manager/model"
 	"keycloak-manager/modules"
 
 	"github.com/Nerzal/gocloak/v7"
@@ -35,7 +36,7 @@ func (s *scopeService) Apply(keycloakConfig *modules.ClientChangeContext) error 
 }
 
 func (s *scopeService) Order() int {
-	return 1
+	return 2
 }
 
 // implementation of modules.DiffHandler.Diff method
@@ -92,7 +93,7 @@ func init() {
 
 // simple wrapper for keycloak service
 func (s *scopeService) addScope(clientId string, scope *gocloak.ScopeRepresentation) error {
-	_, err := s.client.CreateScope(s.ctx, s.token, "products", clientId, *scope)
+	_, err := s.client.CreateScope(s.ctx, s.token, model.CLI.Realm, clientId, *scope)
 	if err != nil {
 		log.Err(err).Str("name", *scope.Name).Msg("Cannot create scope")
 		return err
@@ -104,7 +105,7 @@ func (s *scopeService) addScope(clientId string, scope *gocloak.ScopeRepresentat
 
 //deleteScope - Simple wrapper for keycloak service
 func (s *scopeService) deleteScope(clientId string, scope *gocloak.ScopeRepresentation) error {
-	err := s.client.DeleteScope(s.ctx, s.token, "products", clientId, *scope.ID)
+	err := s.client.DeleteScope(s.ctx, s.token, model.CLI.Realm, clientId, *scope.ID)
 	if err != nil {
 		log.Err(err).Str("name", *scope.Name).Msg("Cannot remove scope")
 		return err
@@ -122,7 +123,7 @@ func (s *scopeService) getScopes(clientId string) ([]*gocloak.ScopeRepresentatio
 		Deep: &deep,
 		Max:  &max,
 	}
-	scopes, err := s.client.GetScopes(s.ctx, s.token, "products", clientId, params)
+	scopes, err := s.client.GetScopes(s.ctx, s.token, model.CLI.Realm, clientId, params)
 	if err != nil {
 		log.Err(err).Str("client", clientId).Msg("Fetching client scopes failed")
 	}

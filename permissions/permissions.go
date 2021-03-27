@@ -48,7 +48,7 @@ func (s *permissionService) Apply(keycloakConfig *modules.ClientChangeContext) e
 }
 
 func (s *permissionService) Order() int {
-	return 4
+	return 5
 }
 
 func (s *permissionService) AddPermission(clientId string, permission gocloak.PermissionRepresentation) error {
