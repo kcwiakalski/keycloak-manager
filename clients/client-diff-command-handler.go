@@ -11,10 +11,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func HandleClientDiffCommand(cfgFileName string, changesFileName string) {
+func HandleClientDiffCommand(cfgFileName string, changesFileName string, keycloak *access.KeycloakContext) {
 	var config modules.ClientDeclaration
 	tools.LoadConfigFile(cfgFileName, &config)
-	ctx := createClientDiffCtx(config)
+	ctx := createClientDiffCtx(config, keycloak)
 	diffConfig := modules.ClientChanges{}
 	if ctx.ClientOp.Op == "NONE" {
 		diffConfig.Client = modules.ClientOp{
@@ -39,15 +39,14 @@ func HandleClientDiffCommand(cfgFileName string, changesFileName string) {
 	if err != nil {
 		log.Err(err).Msg("Cannot serialize config changes to json")
 	}
-	log.Info().Msg(string(opsConfig))
 	err = ioutil.WriteFile(changesFileName, opsConfig, 0644)
 	if err != nil {
 		log.Err(err).Str("fileName", changesFileName).Msg("Cannot write config changes to file")
 	}
 }
 
-func createClientDiffCtx(config modules.ClientDeclaration) modules.ClientDiffContext {
-	clientService := New(access.KeycloakConnection())
+func createClientDiffCtx(config modules.ClientDeclaration, keycloak *access.KeycloakContext) modules.ClientDiffContext {
+	clientService := New(keycloak)
 	client, err := clientService.FindClientByName(*config.Client.ClientID)
 	var clientOp modules.ClientOp
 	if err != nil {

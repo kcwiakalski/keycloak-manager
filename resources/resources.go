@@ -2,7 +2,7 @@ package resources
 
 import (
 	"context"
-	"keycloak-manager/model"
+	"keycloak-manager/access"
 	"keycloak-manager/modules"
 
 	"github.com/Nerzal/gocloak/v7"
@@ -13,23 +13,22 @@ type resourceService struct {
 	client gocloak.GoCloak
 	ctx    context.Context
 	token  string
+	realm  string
 }
 
-var service *resourceService
-
-func init() {
-	ctx := modules.Keycloak
-	service = &resourceService{
-		client: ctx.Client,
-		ctx:    ctx.Ctx,
-		token:  ctx.Token.AccessToken,
+func InitializeService(keycloak *access.KeycloakContext, applyHandlers map[string]modules.ConfigurationHandler, diffHandlers map[string]modules.DiffHandler) {
+	service := &resourceService{
+		client: keycloak.Client,
+		ctx:    keycloak.Ctx,
+		token:  keycloak.Token.AccessToken,
+		realm:  keycloak.Realm,
 	}
-	modules.Modules["resources"] = service
-	modules.DiffModules["resources"] = service
+	applyHandlers["resources"] = service
+	diffHandlers["resources"] = service
 }
 
 func (s *resourceService) addResource(clientId string, resource gocloak.ResourceRepresentation) error {
-	_, err := s.client.CreateResource(s.ctx, s.token, model.CLI.Realm, clientId, resource)
+	_, err := s.client.CreateResource(s.ctx, s.token, s.realm, clientId, resource)
 	if err != nil {
 		log.Err(err).Str("name", *resource.Name).Msg("Cannot create resource")
 		return err
@@ -40,14 +39,14 @@ func (s *resourceService) addResource(clientId string, resource gocloak.Resource
 }
 func (s *resourceService) getResources(clientName string) ([]*gocloak.ResourceRepresentation, error) {
 	params := gocloak.GetResourceParams{}
-	resources, err := s.client.GetResources(s.ctx, s.token, model.CLI.Realm, clientName, params)
+	resources, err := s.client.GetResources(s.ctx, s.token, s.realm, clientName, params)
 	if err != nil {
 		return nil, err
 	}
 	return resources, nil
 }
 func (s *resourceService) deleteResource(clientId string, resource gocloak.ResourceRepresentation) error {
-	err := s.client.DeleteResource(s.ctx, s.token, model.CLI.Realm, clientId, *resource.ID)
+	err := s.client.DeleteResource(s.ctx, s.token, s.realm, clientId, *resource.ID)
 	if err != nil {
 		log.Err(err).Str("resourceName", *resource.Name).Msg("Cannot delete deprecated resource")
 		return err
@@ -99,12 +98,12 @@ func (s *resourceService) Apply(keycloakConfig *modules.ClientChangeContext) err
 	clientId := *keycloakConfig.Client.ID
 	for _, resource := range keycloakConfig.Changes.Resources {
 		if resource.Op == "ADD" {
-			err := service.addResource(clientId, resource.ResourceSpec)
+			err := s.addResource(clientId, resource.ResourceSpec)
 			if err != nil {
 				finalError = err
 			}
 		} else if resource.Op == "DEL" {
-			err := service.deleteResource(clientId, resource.ResourceSpec)
+			err := s.deleteResource(clientId, resource.ResourceSpec)
 			if err != nil {
 				finalError = err
 			}

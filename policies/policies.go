@@ -2,7 +2,7 @@ package policies
 
 import (
 	"context"
-	"keycloak-manager/model"
+	"keycloak-manager/access"
 	"keycloak-manager/modules"
 
 	"github.com/Nerzal/gocloak/v7"
@@ -13,9 +13,8 @@ type policyService struct {
 	client gocloak.GoCloak
 	ctx    context.Context
 	token  string
+	realm  string
 }
-
-var service *policyService
 
 func (s *policyService) Apply(keycloakConfig *modules.ClientChangeContext) error {
 	var finalError error
@@ -23,12 +22,12 @@ func (s *policyService) Apply(keycloakConfig *modules.ClientChangeContext) error
 	for _, policy := range keycloakConfig.Changes.Policies {
 		if policy.Op == "ADD" {
 
-			err := service.CreatePolicy(clientId, &policy.PolicySpec)
+			err := s.CreatePolicy(clientId, &policy.PolicySpec)
 			if err != nil {
 				finalError = err
 			}
 		} else if policy.Op == "DEL" {
-			err := service.deletePolicy(clientId, &policy.PolicySpec)
+			err := s.deletePolicy(clientId, &policy.PolicySpec)
 			if err != nil {
 				finalError = err
 			}
@@ -41,19 +40,19 @@ func (s *policyService) Order() int {
 	return 4
 }
 
-func init() {
-	ctx := modules.Keycloak
-	service = &policyService{
-		client: ctx.Client,
-		ctx:    ctx.Ctx,
-		token:  ctx.Token.AccessToken,
+func InitializeService(keycloak *access.KeycloakContext, applyHandlers map[string]modules.ConfigurationHandler, diffHandlers map[string]modules.DiffHandler) {
+	service := &policyService{
+		client: keycloak.Client,
+		ctx:    keycloak.Ctx,
+		token:  keycloak.Token.AccessToken,
+		realm:  keycloak.Realm,
 	}
-	modules.Modules["policies"] = service
-	modules.DiffModules["policies"] = service
+	applyHandlers["policies"] = service
+	diffHandlers["policies"] = service
 }
 
 func (s *policyService) CreatePolicy(clientId string, policy *gocloak.PolicyRepresentation) error {
-	_, err := s.client.CreatePolicy(s.ctx, s.token, model.CLI.Realm, clientId, *policy)
+	_, err := s.client.CreatePolicy(s.ctx, s.token, s.realm, clientId, *policy)
 	if err != nil {
 		log.Err(err).Str("name", *policy.Name).Msg("Cannot create policy")
 		return err
@@ -64,7 +63,7 @@ func (s *policyService) CreatePolicy(clientId string, policy *gocloak.PolicyRepr
 }
 
 func (s *policyService) deletePolicy(clientId string, policy *gocloak.PolicyRepresentation) error {
-	err := s.client.DeletePolicy(s.ctx, s.token, model.CLI.Realm, clientId, *policy.ID)
+	err := s.client.DeletePolicy(s.ctx, s.token, s.realm, clientId, *policy.ID)
 	if err != nil {
 		log.Err(err).Str("name", *policy.Name).Msg("Cannot remove policy")
 		return err
@@ -117,7 +116,7 @@ func (s *policyService) getPoliciesForClient(clientName string) ([]*gocloak.Poli
 	params := gocloak.GetPolicyParams{
 		Permission: &noPerms,
 	}
-	policies, err := s.client.GetPolicies(s.ctx, s.token, model.CLI.Realm, clientName, params)
+	policies, err := s.client.GetPolicies(s.ctx, s.token, s.realm, clientName, params)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,7 @@ package roles
 
 import (
 	"context"
-	"keycloak-manager/model"
+	"keycloak-manager/access"
 	"keycloak-manager/modules"
 
 	"github.com/Nerzal/gocloak/v7"
@@ -13,9 +13,8 @@ type clientRoleService struct {
 	client gocloak.GoCloak
 	ctx    context.Context
 	token  string
+	realm  string
 }
-
-var service *clientRoleService
 
 // implementation of modules.ConfigurationHandler.Apply method
 func (s *clientRoleService) Apply(keycloakConfig *modules.ClientChangeContext) error {
@@ -23,13 +22,13 @@ func (s *clientRoleService) Apply(keycloakConfig *modules.ClientChangeContext) e
 	clientId := *keycloakConfig.Client.ID
 	for _, role := range keycloakConfig.Changes.Roles {
 		if role.Op == "ADD" {
-			err := service.addRole(clientId, &role.RoleSpec)
+			err := s.addRole(clientId, &role.RoleSpec)
 			if err != nil {
 				finalError = err
 			}
 		}
 		if role.Op == "DEL" {
-			service.deleteRole(clientId, &role.RoleSpec)
+			s.deleteRole(clientId, &role.RoleSpec)
 		}
 	}
 	return finalError
@@ -50,12 +49,9 @@ func (s *clientRoleService) Diff(keycloakConfig *modules.ClientDiffContext, opsC
 			return err
 		}
 	}
-	for _, role := range roles {
-		log.Info().Msg(*role.Name)
-	}
-	x0 := keycloakConfig.Declaration.Roles
+	expectedRoles := keycloakConfig.Declaration.Roles
 	var inputRoles map[string]gocloak.Role = make(map[string]gocloak.Role)
-	for _, inputRole := range x0 {
+	for _, inputRole := range expectedRoles {
 		inputRoles[*inputRole.Name] = inputRole
 	}
 	for _, role := range roles {
@@ -64,7 +60,7 @@ func (s *clientRoleService) Diff(keycloakConfig *modules.ClientDiffContext, opsC
 		if found {
 			delete(inputRoles, name)
 		} else {
-			log.Info().Str("name", name).Msg("Deprecated/Old Scope detected, delete op required")
+			log.Info().Str("name", name).Msg("Deprecated/Old role detected, delete op required")
 			ops = append(ops, modules.RolesOp{
 				Op:       "DEL",
 				RoleSpec: *role,
@@ -83,20 +79,20 @@ func (s *clientRoleService) Diff(keycloakConfig *modules.ClientDiffContext, opsC
 	return nil
 }
 
-func init() {
-	ctx := modules.Keycloak
-	service = &clientRoleService{
-		client: ctx.Client,
-		ctx:    ctx.Ctx,
-		token:  ctx.Token.AccessToken,
+func InitializeService(keycloak *access.KeycloakContext, applyModules map[string]modules.ConfigurationHandler, diffHandlers map[string]modules.DiffHandler) {
+	service := &clientRoleService{
+		client: keycloak.Client,
+		ctx:    keycloak.Ctx,
+		token:  keycloak.Token.AccessToken,
+		realm:  keycloak.Realm,
 	}
-	modules.Modules["client-roles"] = service
-	modules.DiffModules["client-roles"] = service
+	applyModules["client-roles"] = service
+	diffHandlers["client-roles"] = service
 }
 
 // simple wrapper for keycloak service
 func (s *clientRoleService) addRole(clientId string, role *gocloak.Role) error {
-	_, err := s.client.CreateClientRole(s.ctx, s.token, model.CLI.Realm, clientId, *role)
+	_, err := s.client.CreateClientRole(s.ctx, s.token, s.realm, clientId, *role)
 	if err != nil {
 		log.Err(err).Str("name", *role.Name).Msg("Cannot create role")
 		return err
@@ -108,7 +104,7 @@ func (s *clientRoleService) addRole(clientId string, role *gocloak.Role) error {
 
 //deleteScope - Simple wrapper for keycloak service
 func (s *clientRoleService) deleteRole(clientId string, role *gocloak.Role) error {
-	err := s.client.DeleteClientRole(s.ctx, s.token, model.CLI.Realm, clientId, *role.Name)
+	err := s.client.DeleteClientRole(s.ctx, s.token, s.realm, clientId, *role.Name)
 	if err != nil {
 		log.Err(err).Str("name", *role.Name).Msg("Cannot remove role")
 		return err
@@ -120,7 +116,7 @@ func (s *clientRoleService) deleteRole(clientId string, role *gocloak.Role) erro
 
 // Simple wrapper for keycloak service
 func (s *clientRoleService) getRoles(clientId string) ([]*gocloak.Role, error) {
-	roles, err := s.client.GetClientRoles(s.ctx, s.token, model.CLI.Realm, clientId)
+	roles, err := s.client.GetClientRoles(s.ctx, s.token, s.realm, clientId)
 	if err != nil {
 		log.Err(err).Str("client", clientId).Msg("Fetching client roles failed")
 	}
