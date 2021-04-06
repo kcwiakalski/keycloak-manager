@@ -44,18 +44,22 @@ $ ./keycloak-manager --help
 Usage: keycloak-manager <command>
 
 Flags:
-  -h, --help            Show context-sensitive help.
-  -p, --port=INT        Port on which Keycloak Admin Api is available
-  -h, --host=STRING     Server hosting Keycloak instalation
-  -u, --user=STRING     Username with administrative rights
-      --pass=STRING     Password for user with administrative rights. It is highly discuraged to use this flag directly
-  -r, --realm=STRING    Realm holding user with administrative rights, usually the same as realm that is target for operation
+  -h, --help             Show context-sensitive help.
+  -p, --port=INT         Port on which Keycloak Admin Api is available
+  -s, --server=STRING    Server hosting Keycloak instalation
+  -u, --user=STRING      Username with administrative rights
+      --pass=STRING      Password for user with administrative rights.If password is not provided via command-line user will be prompted for it. It is highly discuraged to use this flag directly.
+  -r, --realm=STRING     Realm holding user with administrative rights, usually the same as realm that is target for operation
 
 Commands:
+  version
+    Print tool version
+
   client
     Operates on client configuration
 
 Run "keycloak-manager <command> --help" for more information on a command.
+
 ```
 ## Available commands
 * Client handling:
@@ -68,9 +72,10 @@ Operates on client configuration
 Flags:
   -h, --help                                  Show context-sensitive help.
   -p, --port=INT                              Port on which Keycloak Admin Api is available
-  -h, --host=STRING                           Server hosting Keycloak instalation
+  -s, --server=STRING                         Server hosting Keycloak instalation
   -u, --user=STRING                           Username with administrative rights
-      --pass=STRING                           Password for user with administrative rights. It is highly discuraged to use this flag directly
+      --pass=STRING                           Password for user with administrative rights.If password is not provided via command-line user will be prompted for it. It is highly discuraged to use this flag
+                                              directly.
   -r, --realm=STRING                          Realm holding user with administrative rights, usually the same as realm that is target for operation
 
   -f, --file="client-config.json"             Path to file with client configuration

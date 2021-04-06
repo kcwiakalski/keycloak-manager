@@ -1,11 +1,7 @@
 package modules
 
 import (
-	"keycloak-manager/access"
-	"keycloak-manager/model"
-
 	"github.com/Nerzal/gocloak/v7"
-	"github.com/alecthomas/kong"
 )
 
 type ClientDeclaration struct {
@@ -69,15 +65,8 @@ type PermissionsOp struct {
 	PermSpec gocloak.PermissionRepresentation `json:"permSpec"`
 }
 
-var Keycloak *access.KeycloakContext
-
 var Modules map[string]ConfigurationHandler = make(map[string]ConfigurationHandler)
 var DiffModules map[string]DiffHandler = make(map[string]DiffHandler)
-
-func init() {
-	model.Ctx = kong.Parse(&model.CLI)
-	Keycloak = access.KeycloakConnection()
-}
 
 type ConfigurationHandler interface {
 	Apply(changeCtx *ClientChangeContext) error
@@ -85,7 +74,6 @@ type ConfigurationHandler interface {
 }
 
 type DiffHandler interface {
-	// method generating operations required to perform, so server match with config declaration
 	Diff(declaration *ClientDiffContext, changes *ClientChanges) error
 	Order() int
 }

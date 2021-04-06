@@ -2,7 +2,7 @@ package scopes
 
 import (
 	"context"
-	"keycloak-manager/model"
+	"keycloak-manager/access"
 	"keycloak-manager/modules"
 
 	"github.com/Nerzal/gocloak/v7"
@@ -13,9 +13,8 @@ type scopeService struct {
 	client gocloak.GoCloak
 	ctx    context.Context
 	token  string
+	realm  string
 }
-
-var service *scopeService
 
 // implementation of modules.ConfigurationHandler.Apply method
 func (s *scopeService) Apply(keycloakConfig *modules.ClientChangeContext) error {
@@ -23,13 +22,13 @@ func (s *scopeService) Apply(keycloakConfig *modules.ClientChangeContext) error 
 	clientId := *keycloakConfig.Client.ID
 	for _, scope := range keycloakConfig.Changes.Scopes {
 		if scope.Op == "ADD" {
-			err := service.addScope(clientId, &scope.ScopeSpec)
+			err := s.addScope(clientId, &scope.ScopeSpec)
 			if err != nil {
 				finalError = err
 			}
 		}
 		if scope.Op == "DEL" {
-			service.deleteScope(clientId, &scope.ScopeSpec)
+			s.deleteScope(clientId, &scope.ScopeSpec)
 		}
 	}
 	return finalError
@@ -80,20 +79,21 @@ func (s *scopeService) Diff(keycloakConfig *modules.ClientDiffContext, opsConfig
 	return nil
 }
 
-func init() {
-	ctx := modules.Keycloak
-	service = &scopeService{
+func InitializeService(keycloak *access.KeycloakContext, applyModules map[string]modules.ConfigurationHandler, diffHandlers map[string]modules.DiffHandler) {
+	ctx := keycloak
+	service := &scopeService{
 		client: ctx.Client,
 		ctx:    ctx.Ctx,
 		token:  ctx.Token.AccessToken,
+		realm:  ctx.Realm,
 	}
-	modules.Modules["scopes"] = service
-	modules.DiffModules["scopes"] = service
+	applyModules["scopes"] = service
+	diffHandlers["scopes"] = service
 }
 
 // simple wrapper for keycloak service
 func (s *scopeService) addScope(clientId string, scope *gocloak.ScopeRepresentation) error {
-	_, err := s.client.CreateScope(s.ctx, s.token, model.CLI.Realm, clientId, *scope)
+	_, err := s.client.CreateScope(s.ctx, s.token, s.realm, clientId, *scope)
 	if err != nil {
 		log.Err(err).Str("name", *scope.Name).Msg("Cannot create scope")
 		return err
@@ -105,7 +105,7 @@ func (s *scopeService) addScope(clientId string, scope *gocloak.ScopeRepresentat
 
 //deleteScope - Simple wrapper for keycloak service
 func (s *scopeService) deleteScope(clientId string, scope *gocloak.ScopeRepresentation) error {
-	err := s.client.DeleteScope(s.ctx, s.token, model.CLI.Realm, clientId, *scope.ID)
+	err := s.client.DeleteScope(s.ctx, s.token, s.realm, clientId, *scope.ID)
 	if err != nil {
 		log.Err(err).Str("name", *scope.Name).Msg("Cannot remove scope")
 		return err
@@ -123,7 +123,7 @@ func (s *scopeService) getScopes(clientId string) ([]*gocloak.ScopeRepresentatio
 		Deep: &deep,
 		Max:  &max,
 	}
-	scopes, err := s.client.GetScopes(s.ctx, s.token, model.CLI.Realm, clientId, params)
+	scopes, err := s.client.GetScopes(s.ctx, s.token, s.realm, clientId, params)
 	if err != nil {
 		log.Err(err).Str("client", clientId).Msg("Fetching client scopes failed")
 	}

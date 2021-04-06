@@ -8,12 +8,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func ApplyClientChanged(configFileName string) {
-	// configFileName := "product-service-sec.json"
-	// configFileName := "change-log-ops.json"
+func ApplyClientChanged(configFileName string, keycloak *access.KeycloakContext) {
 	var declaration modules.ClientChanges
 	tools.LoadConfigFile(configFileName, &declaration)
-	context := createOpConfigCtx(declaration)
+	context := createOpConfigCtx(declaration, keycloak)
 	handlers := make([]modules.ConfigurationHandler, len(modules.Modules))
 	for _, handler := range modules.Modules {
 		handlers[handler.Order()] = handler
@@ -22,8 +20,8 @@ func ApplyClientChanged(configFileName string) {
 		handler.Apply(&context)
 	}
 }
-func createOpConfigCtx(config modules.ClientChanges) modules.ClientChangeContext {
-	clientService := New(access.KeycloakConnection())
+func createOpConfigCtx(config modules.ClientChanges, keycloak *access.KeycloakContext) modules.ClientChangeContext {
+	clientService := New(keycloak)
 	client, err := clientService.FindClientByName(*config.Client.ClientSpec.ClientID)
 	if err != nil {
 		log.Info().Str("client", *config.Client.ClientSpec.ClientID).Msg("Client does not exists. Creating new")

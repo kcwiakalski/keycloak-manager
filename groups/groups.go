@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"keycloak-manager/access"
-	"keycloak-manager/model"
 	"keycloak-manager/modules"
 	"strings"
 
@@ -16,6 +15,7 @@ type GroupService struct {
 	client gocloak.GoCloak
 	ctx    context.Context
 	token  string
+	realm  string
 }
 
 func new(ctx *access.KeycloakContext) *GroupService {
@@ -23,17 +23,15 @@ func new(ctx *access.KeycloakContext) *GroupService {
 		client: ctx.Client,
 		ctx:    ctx.Ctx,
 		token:  ctx.Token.AccessToken,
+		realm:  ctx.Realm,
 	}
 }
 
-var groupsService *GroupService
-
-// groupsService := New(keycloak)
 func (s *GroupService) Apply(ctx *modules.ClientChangeContext) error {
 	var finalError error
 	for _, groupChange := range ctx.Changes.Groups {
 		if groupChange.Op == "ADD" {
-			err := groupsService.AddGroup(&groupChange.GroupSpec)
+			err := s.AddGroup(&groupChange.GroupSpec)
 			if err != nil {
 				finalError = err
 			}
@@ -46,10 +44,10 @@ func (s *GroupService) Order() int {
 	return 0
 }
 
-func init() {
-	groupsService = new(modules.Keycloak)
-	modules.Modules["groups"] = groupsService
-	modules.DiffModules["groups"] = groupsService
+func InitializeService(keycloak *access.KeycloakContext, applyHandlers map[string]modules.ConfigurationHandler, diffHandlers map[string]modules.DiffHandler) {
+	groupsService := new(keycloak)
+	applyHandlers["groups"] = groupsService
+	diffHandlers["groups"] = groupsService
 }
 
 func (s *GroupService) getGroupByName(groupName string) *gocloak.Group {
@@ -72,7 +70,7 @@ func (s *GroupService) getGroupByName(groupName string) *gocloak.Group {
 		Search: &searchTerm,
 		Full:   &fullSearch,
 	}
-	existingGroups, _ := s.client.GetGroups(s.ctx, s.token, model.CLI.Realm, params)
+	existingGroups, _ := s.client.GetGroups(s.ctx, s.token, s.realm, params)
 	for _, group := range existingGroups {
 		if *group.Name == groupName {
 			return group
@@ -96,9 +94,9 @@ func (s *GroupService) getGroupByPath(groupPath *gocloak.Group) *gocloak.Group {
 		Search: searchTerm,
 		Full:   &fullSearch,
 	}
-	existingGroups, _ := s.client.GetGroups(s.ctx, s.token, model.CLI.Realm, params)
+	existingGroups, _ := s.client.GetGroups(s.ctx, s.token, s.realm, params)
 	for _, group := range existingGroups {
-		matchedGroup := groupsService.findGroupInTopLevelGroup(groupPath, group)
+		matchedGroup := s.findGroupInTopLevelGroup(groupPath, group)
 		if matchedGroup != nil {
 			return matchedGroup
 		}
@@ -164,7 +162,7 @@ func (s *GroupService) AddGroup(group *gocloak.Group) error {
 	pathParts := strings.Count(*group.Path, "/")
 	if pathParts == 1 && strings.TrimPrefix(*group.Path, "/") == *group.Name {
 		if !s.groupExists(*group.Name) {
-			groupId, err := s.client.CreateGroup(s.ctx, s.token, model.CLI.Realm, *group)
+			groupId, err := s.client.CreateGroup(s.ctx, s.token, s.realm, *group)
 			if err != nil {
 				log.Err(err).Str("name", *group.Name).Msg("Error creating group")
 				return err
@@ -183,7 +181,7 @@ func (s *GroupService) AddGroup(group *gocloak.Group) error {
 				return fmt.Errorf("Group %s with parent%s is already defined", *group.Name, *directParent.Name)
 			}
 		}
-		groupId, err := s.client.CreateChildGroup(s.ctx, s.token, model.CLI.Realm, *directParent.ID, *group)
+		groupId, err := s.client.CreateChildGroup(s.ctx, s.token, s.realm, *directParent.ID, *group)
 		if err != nil {
 			log.Err(err).Str("group", *group.Name).Str("parent", *directParent.Name).Msg("Cannot create child group in parent")
 			return fmt.Errorf("Cannot create child group %s in parent %s. %s", *group.Name, *directParent.Name, err.Error())

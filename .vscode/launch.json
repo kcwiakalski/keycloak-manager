@@ -16,9 +16,9 @@
                 "-m",
                 "diff",
                 "-f",
-                "product-service-sec-conf.json",
+                "playground/product-service-sec-conf.json",
                 "-o",
-                "product-service-sec-change.json",
+                "playground/product-service-sec-change.json",
                 "-r",
                 "products",
                 "-u",
@@ -27,7 +27,8 @@
                 "password",
                 "-p",
                 "9723",
-                "--host=swarm-local"
+                "-s",
+                "swarm-local"
             ]
         },
         {
@@ -42,7 +43,7 @@
                 "-m",
                 "apply",
                 "-f",
-                "product-service-sec-change.json",
+                "playground/product-service-sec-change.json",
                 "-r",
                 "products",
                 "-u",
@@ -51,7 +52,8 @@
                 "password",
                 "-p",
                 "9723",
-                "--host=swarm-local"
+                "-s",
+                "swarm-local"
             ]
         }
     ]
