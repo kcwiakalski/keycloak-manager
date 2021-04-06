@@ -608,6 +608,5 @@ Let's assume we alrady have client *sample-client* in realm *sample-realm* with 
 ```
 
 # Downloads
-Version 1.0
-   - [Windows 64-bit](./binaries/1.0/keycloak-manager.exe)
-   - [Linux 64-bit](./binaries/1.0/keycloak-manager)
+Version 1.1
+   - [Linux 64-bit](./binaries/1.1/keycloak-manager)
