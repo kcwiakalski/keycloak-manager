@@ -39,7 +39,7 @@ func main() {
 	case "client":
 		if params.Pass == "" {
 			fmt.Printf("Enter password for user %s: ", params.User)
-			password, _ := terminal.ReadPassword(syscall.Stdin)
+			password, _ := terminal.ReadPassword(int(syscall.Stdin))
 			pass := string(password)
 			if len(pass) < 1 {
 				panic("Password for user missing")
