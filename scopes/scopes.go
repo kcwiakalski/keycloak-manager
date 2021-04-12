@@ -30,6 +30,9 @@ func (s *scopeService) Apply(keycloakConfig *modules.ClientChangeContext) error 
 		if scope.Op == "DEL" {
 			s.deleteScope(clientId, &scope.ScopeSpec)
 		}
+		if scope.Op == "UPD" {
+			s.updateScope(clientId, &scope.ScopeSpec)
+		}
 	}
 	return finalError
 }
@@ -38,37 +41,64 @@ func (s *scopeService) Order() int {
 	return 2
 }
 
+func scopeEquals(first *gocloak.ScopeRepresentation, second *gocloak.ScopeRepresentation) bool {
+	if first == nil && second == nil {
+		return true
+	}
+	if (first == nil && second != nil) || (first != nil && second == nil) {
+		return false
+	}
+	if first.DisplayName == nil && second.DisplayName == nil {
+		return true
+	}
+	if (first.DisplayName == nil && second.DisplayName != nil) || (first.DisplayName != nil && second.DisplayName == nil) {
+		return false
+	}
+	if *first.DisplayName == *second.DisplayName {
+		return true
+	}
+	return false
+}
+
 // implementation of modules.DiffHandler.Diff method
 func (s *scopeService) Diff(keycloakConfig *modules.ClientDiffContext, opsConfig *modules.ClientChanges) error {
 	var ops []modules.ScopesOp = make([]modules.ScopesOp, 0)
-	var scopes []*gocloak.ScopeRepresentation
+	var existingScopes []*gocloak.ScopeRepresentation
 	if keycloakConfig.ClientOp.Op == "NONE" {
 		var err error
-		scopes, err = s.getScopes(*keycloakConfig.ClientOp.ClientSpec.ID)
+		existingScopes, err = s.getScopes(*keycloakConfig.ClientOp.ClientSpec.ID)
 		if err != nil {
 			return err
 		}
 	}
 	x0 := keycloakConfig.Declaration.Scopes
-	var inputScopes map[string]gocloak.ScopeRepresentation = make(map[string]gocloak.ScopeRepresentation)
+	var configuredScopes map[string]gocloak.ScopeRepresentation = make(map[string]gocloak.ScopeRepresentation)
 	for _, inputScope := range x0 {
-		inputScopes[*inputScope.Name] = inputScope
+		configuredScopes[*inputScope.Name] = inputScope
 	}
-	for _, scope := range scopes {
-		name := *scope.Name
-		_, found := inputScopes[name]
+	for _, existingScope := range existingScopes {
+		name := *existingScope.Name
+		configuredScope, found := configuredScopes[name]
 		if found {
-			delete(inputScopes, name)
+			if !scopeEquals(&configuredScope, existingScope) {
+				log.Info().Str("name", name).Msg("Scope update detected, update op required")
+				configuredScope.ID = existingScope.ID
+				ops = append(ops, modules.ScopesOp{
+					Op:        "UPD",
+					ScopeSpec: *&configuredScope,
+				})
+			}
+			delete(configuredScopes, name)
 		} else {
 			log.Info().Str("name", name).Msg("Deprecated/Old Scope detected, delete op required")
 			ops = append(ops, modules.ScopesOp{
 				Op:        "DEL",
-				ScopeSpec: *scope,
+				ScopeSpec: *existingScope,
 			})
 		}
 	}
-	for key := range inputScopes {
-		scope := inputScopes[key]
+	for key := range configuredScopes {
+		scope := configuredScopes[key]
 		log.Info().Str("name", *scope.Name).Str("key", key).Msg("New scope detected, add op required")
 		ops = append(ops, modules.ScopesOp{
 			Op:        "ADD",
@@ -128,5 +158,16 @@ func (s *scopeService) getScopes(clientId string) ([]*gocloak.ScopeRepresentatio
 		log.Err(err).Str("client", clientId).Msg("Fetching client scopes failed")
 	}
 	return scopes, err
+}
 
+//updateScope - Simple wrapper for keycloak service
+func (s *scopeService) updateScope(clientId string, scope *gocloak.ScopeRepresentation) error {
+	err := s.client.UpdateScope(s.ctx, s.token, s.realm, clientId, *scope)
+	if err != nil {
+		log.Err(err).Str("name", *scope.Name).Msg("Cannot update scope")
+		return err
+	} else {
+		log.Info().Str("name", *scope.Name).Msg("Scope updated")
+	}
+	return nil
 }

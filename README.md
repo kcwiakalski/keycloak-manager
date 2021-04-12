@@ -88,9 +88,9 @@ Flags:
 | Context    | Add | Delete | Update |
 |------------|-----|--------|--------|
 |client      |  x  |        |        |
-|scopes      |  x  |    x   |        | 
+|scopes      |  x  |    x   |    x   | 
 |client roles|  x  |    x   |        | 
-|resources   |  x  |    x   |        | 
+|resources   |  x  |    x   |    x   | 
 |policies    |  x  |    x   |        | 
 |permissions |  x  |    x   |        | 
 |realm groups|  x  |        |        |

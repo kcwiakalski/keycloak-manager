@@ -50,29 +50,91 @@ func (s *resourceService) deleteResource(clientId string, resource gocloak.Resou
 	if err != nil {
 		log.Err(err).Str("resourceName", *resource.Name).Msg("Cannot delete deprecated resource")
 		return err
+	} else {
+		log.Info().Str("name", *resource.Name).Msg("Resource deleted")
 	}
 	return nil
 }
+func (s *resourceService) updateResource(clientId string, resource gocloak.ResourceRepresentation) error {
+	err := s.client.UpdateResource(s.ctx, s.token, s.realm, clientId, resource)
+	if err != nil {
+		log.Err(err).Str("resourceName", *resource.Name).Msg("Cannot update resource")
+		return err
+	} else {
+		log.Info().Str("name", *resource.Name).Msg("Resource updated")
+	}
+	return nil
+}
+
+func resourceEquals(first *gocloak.ResourceRepresentation, second *gocloak.ResourceRepresentation) bool {
+	if *first.DisplayName != *second.DisplayName {
+		return false
+	}
+	if len(*first.Scopes) != len(*second.Scopes) {
+		return false
+	}
+	var firstScopes = make([]string, 0)
+	for _, scope := range *first.Scopes {
+		firstScopes = append(firstScopes, *scope.Name)
+	}
+	var remainingScopes = make([]string, len(firstScopes))
+	copy(remainingScopes, firstScopes)
+	var secondeScopes = make([]string, 0)
+	for _, scope := range *second.Scopes {
+		secondeScopes = append(secondeScopes, *scope.Name)
+	}
+
+	for i, firstScope := range firstScopes {
+		for j, otherScope := range secondeScopes {
+			if firstScope == otherScope {
+				secondeScopes[j] = secondeScopes[len(secondeScopes)-1]
+				secondeScopes = secondeScopes[:len(secondeScopes)-1]
+				remainingScopes[i] = ""
+				break
+			}
+		}
+	}
+	remaining := false
+	for _, scope := range remainingScopes {
+		if scope != "" {
+			remaining = true
+		}
+	}
+	if len(secondeScopes) > 0 || remaining {
+		return false
+	}
+	return true
+}
+
 func (s *resourceService) Diff(keycloakConfig *modules.ClientDiffContext, opsConfig *modules.ClientChanges) error {
 	var ops []modules.ResourcesOp = make([]modules.ResourcesOp, 0)
-	var resources []*gocloak.ResourceRepresentation
+	var existingResources []*gocloak.ResourceRepresentation
 	if keycloakConfig.ClientOp.Op == "NONE" {
 		var err error
-		resources, err = s.getResources(*keycloakConfig.ClientOp.ClientSpec.ID)
+		existingResources, err = s.getResources(*keycloakConfig.ClientOp.ClientSpec.ID)
 		if err != nil {
 			return err
 		}
 	}
-	x0 := keycloakConfig.Declaration.Resources
-	var inputResources map[string]gocloak.ResourceRepresentation = make(map[string]gocloak.ResourceRepresentation)
-	for _, inputResource := range x0 {
-		inputResources[*inputResource.Name] = inputResource
+	configuredResources := keycloakConfig.Declaration.Resources
+	var expectedResources map[string]gocloak.ResourceRepresentation = make(map[string]gocloak.ResourceRepresentation)
+	for _, configuredResource := range configuredResources {
+		expectedResources[*configuredResource.Name] = configuredResource
 	}
-	for _, resource := range resources {
+	for _, resource := range existingResources {
 		name := *resource.Name
-		_, found := inputResources[name]
+		expectedResource, found := expectedResources[name]
 		if found {
-			delete(inputResources, name)
+			if !resourceEquals(resource, &expectedResource) {
+				log.Info().Str("name", name).Msg("Resource changed detected, update op required")
+				finalResource := expectedResource
+				finalResource.ID = resource.ID
+				ops = append(ops, modules.ResourcesOp{
+					Op:           "UPD",
+					ResourceSpec: finalResource,
+				})
+			}
+			delete(expectedResources, name)
 		} else {
 			log.Info().Str("name", name).Msg("Deprecated/Old Resource detected, delete op required")
 			ops = append(ops, modules.ResourcesOp{
@@ -81,8 +143,8 @@ func (s *resourceService) Diff(keycloakConfig *modules.ClientDiffContext, opsCon
 			})
 		}
 	}
-	for key := range inputResources {
-		resource := inputResources[key]
+	for key := range expectedResources {
+		resource := expectedResources[key]
 		log.Info().Str("name", *resource.Name).Str("key", key).Msg("New resource detected, add op required")
 		ops = append(ops, modules.ResourcesOp{
 			Op:           "ADD",
@@ -104,6 +166,11 @@ func (s *resourceService) Apply(keycloakConfig *modules.ClientChangeContext) err
 			}
 		} else if resource.Op == "DEL" {
 			err := s.deleteResource(clientId, resource.ResourceSpec)
+			if err != nil {
+				finalError = err
+			}
+		} else if resource.Op == "UPD" {
+			err := s.updateResource(clientId, resource.ResourceSpec)
 			if err != nil {
 				finalError = err
 			}
