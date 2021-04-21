@@ -78,8 +78,8 @@ Flags:
                                               directly.
   -r, --realm=STRING                          Realm holding user with administrative rights, usually the same as realm that is target for operation
 
-  -f, --file="client-config.json"             Path to file with client configuration
-  -m, --mode="diff"                           Indicates what should be done with config file
+  -f, --file="client-config.json"             Path to file with client configuration | diff file
+  -m, --mode= [ "diff" || "apply" ]           Indicates what should be done with config file
   -o, --output="client-config-change.json"    For diff flag indicates file name what will hold operations to apply
 ```
 
