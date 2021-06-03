@@ -4,6 +4,7 @@ import (
 	"context"
 	"keycloak-manager/access"
 	"keycloak-manager/modules"
+	"keycloak-manager/tools"
 
 	"github.com/Nerzal/gocloak/v7"
 	"github.com/rs/zerolog/log"
@@ -27,6 +28,12 @@ func (s *clientRoleService) Apply(keycloakConfig *modules.ClientChangeContext) e
 				finalError = err
 			}
 		}
+		if role.Op == "UPD" {
+			err := s.updateRole(clientId, &role.RoleSpec)
+			if err != nil {
+				finalError = err
+			}
+		}
 		if role.Op == "DEL" {
 			s.deleteRole(clientId, &role.RoleSpec)
 		}
@@ -41,34 +48,43 @@ func (s *clientRoleService) Order() int {
 // implementation of modules.DiffHandler.Diff method
 func (s *clientRoleService) Diff(keycloakConfig *modules.ClientDiffContext, opsConfig *modules.ClientChanges) error {
 	var ops []modules.RolesOp = make([]modules.RolesOp, 0)
-	var roles []*gocloak.Role
+	var existingRoles []*gocloak.Role
 	if keycloakConfig.ClientOp.Op == "NONE" {
 		var err error
-		roles, err = s.getRoles(*keycloakConfig.ClientOp.ClientSpec.ID)
+		existingRoles, err = s.getRoles(*keycloakConfig.ClientOp.ClientSpec.ID)
 		if err != nil {
 			return err
 		}
 	}
-	expectedRoles := keycloakConfig.Declaration.Roles
-	var inputRoles map[string]gocloak.Role = make(map[string]gocloak.Role)
-	for _, inputRole := range expectedRoles {
-		inputRoles[*inputRole.Name] = inputRole
+	configuredRoles := keycloakConfig.Declaration.Roles
+	var configuredRolesMap map[string]gocloak.Role = make(map[string]gocloak.Role)
+	for _, inputRole := range configuredRoles {
+		configuredRolesMap[*inputRole.Name] = inputRole
 	}
-	for _, role := range roles {
-		name := *role.Name
-		_, found := inputRoles[name]
+	for _, existingRole := range existingRoles {
+		name := *existingRole.Name
+		// configuredRole, found := inputRoles[name]
+		configuredRole, found := configuredRolesMap[name]
 		if found {
-			delete(inputRoles, name)
+			if !roleEquals(existingRole, &configuredRole) {
+				log.Info().Str("name", name).Msg("Client role update detected, update op required")
+				configuredRole.ID = existingRole.ID
+				ops = append(ops, modules.RolesOp{
+					Op:       "UPD",
+					RoleSpec: configuredRole,
+				})
+			}
+			delete(configuredRolesMap, name)
 		} else {
 			log.Info().Str("name", name).Msg("Deprecated/Old role detected, delete op required")
 			ops = append(ops, modules.RolesOp{
 				Op:       "DEL",
-				RoleSpec: *role,
+				RoleSpec: *existingRole,
 			})
 		}
 	}
-	for key := range inputRoles {
-		role := inputRoles[key]
+	for key := range configuredRolesMap {
+		role := configuredRolesMap[key]
 		log.Info().Str("name", *role.Name).Str("key", key).Msg("New client role detected, add op required")
 		ops = append(ops, modules.RolesOp{
 			Op:       "ADD",
@@ -114,6 +130,18 @@ func (s *clientRoleService) deleteRole(clientId string, role *gocloak.Role) erro
 	return nil
 }
 
+//update client role - Simple wrapper for keycloak service
+func (s *clientRoleService) updateRole(clientId string, role *gocloak.Role) error {
+	err := s.client.UpdateRole(s.ctx, s.token, s.realm, clientId, *role)
+	if err != nil {
+		log.Err(err).Str("name", *role.Name).Msg("Cannot update role")
+		return err
+	} else {
+		log.Info().Str("name", *role.Name).Msg("Role updated")
+	}
+	return nil
+}
+
 // Simple wrapper for keycloak service
 func (s *clientRoleService) getRoles(clientId string) ([]*gocloak.Role, error) {
 	roles, err := s.client.GetClientRoles(s.ctx, s.token, s.realm, clientId)
@@ -122,4 +150,14 @@ func (s *clientRoleService) getRoles(clientId string) ([]*gocloak.Role, error) {
 	}
 	return roles, err
 
+}
+
+// helper methods
+func roleEquals(first *gocloak.Role, second *gocloak.Role) bool {
+	if tools.ObjectComparableInDepth(first, second) {
+		if tools.StringEquals(first.Description, second.Description) {
+			return true
+		}
+	}
+	return false
 }

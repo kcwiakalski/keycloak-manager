@@ -53,9 +53,11 @@ func main() {
 		if mode == "diff" {
 			output := params.Client.Output
 			clients.HandleClientDiffCommand(file, output, kecloak)
+			log.Info().Msg("Config processing and diff generation finished")
 		}
 		if mode == "apply" {
 			clients.ApplyClientChanged(file, kecloak)
+			log.Info().Msg("Configuration diff application finished")
 		}
 	}
 }

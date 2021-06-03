@@ -4,6 +4,7 @@ import (
 	"context"
 	"keycloak-manager/access"
 	"keycloak-manager/modules"
+	"keycloak-manager/tools"
 
 	"github.com/Nerzal/gocloak/v7"
 	"github.com/rs/zerolog/log"
@@ -42,20 +43,8 @@ func (s *scopeService) Order() int {
 }
 
 func scopeEquals(first *gocloak.ScopeRepresentation, second *gocloak.ScopeRepresentation) bool {
-	if first == nil && second == nil {
-		return true
-	}
-	if (first == nil && second != nil) || (first != nil && second == nil) {
-		return false
-	}
-	if first.DisplayName == nil && second.DisplayName == nil {
-		return true
-	}
-	if (first.DisplayName == nil && second.DisplayName != nil) || (first.DisplayName != nil && second.DisplayName == nil) {
-		return false
-	}
-	if *first.DisplayName == *second.DisplayName {
-		return true
+	if tools.ObjectComparableInDepth(first, second) {
+		return tools.StringEquals(first.DisplayName, second.DisplayName)
 	}
 	return false
 }

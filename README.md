@@ -74,8 +74,7 @@ Flags:
   -p, --port=INT                              Port on which Keycloak Admin Api is available
   -s, --server=STRING                         Server hosting Keycloak instalation
   -u, --user=STRING                           Username with administrative rights
-      --pass=STRING                           Password for user with administrative rights.If password is not provided via command-line user will be prompted for it. It is highly discuraged to use this flag
-                                              directly.
+      --pass=STRING                           Password for user with administrative rights.If password is not provided via command-line user will be prompted for it. It is highly discuraged to use this flag directly.
   -r, --realm=STRING                          Realm holding user with administrative rights, usually the same as realm that is target for operation
 
   -f, --file="client-config.json"             Path to file with client configuration | diff file
@@ -89,11 +88,14 @@ Flags:
 |------------|-----|--------|--------|
 |client      |  x  |        |        |
 |scopes      |  x  |    x   |    x   | 
-|client roles|  x  |    x   |        | 
+|client roles|  x  |    x   |    X   | 
 |resources   |  x  |    x   |    x   | 
-|policies    |  x  |    x   |        | 
+|policies    |  x  |    x   |    x*  | 
 |permissions |  x  |    x   |        | 
 |realm groups|  x  |        |        |
+```
+* Keycloka supports several types of policies, tool support updating only policies of types: group, role, javascript (js)
+```
 ## Configuration data model
 Configration is describe by json object containing attributes for specific aspect of client configuration. Configuration uses standard Keycloak data structures defined for its [REST Api](https://www.keycloak.org/docs-api/12.0/rest-api/index.html#_definitions). Basic json looks like this:
 ```json
@@ -159,8 +161,8 @@ There are two way you can build this tool on your own:
 2. Alternatively if you have Docker installed on your machine you can use official Golang image and build biniaries without setting up local development environment. 
    - build for linux 64-bit 
       ```
-      docker run --rm -v "$PWD":/usr/src/keycloak-manager -w /usr/src/keycloak-manager -e GOOS=linux -e GOARCH=amd64 golang:1.14 go build
       ```
+      docker run --rm -v "$PWD":/usr/src/keycloak-manager -w /usr/src/keycloak-manager -e GOOS=linux -e GOARCH=amd64 golang:1.14 go build
    - build for windows 64-bit
       ```
       docker run --rm -v "$PWD":/usr/src/keycloak-manager -w /usr/src/keycloak-manager -e GOOS=windows -e GOARCH=amd64 golang:1.14 go build
